@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -14,7 +15,7 @@ import (
 	"github.com/classic-terra/core/v3/tests/e2e/configurer/config"
 	"github.com/classic-terra/core/v3/tests/e2e/containers"
 	"github.com/classic-terra/core/v3/tests/e2e/initialization"
-	taxexemptiontypes "github.com/classic-terra/core/v3/x/taxexemption/types"
+	"github.com/classic-terra/core/v3/tests/e2e/util"
 )
 
 type Config struct {
@@ -135,15 +136,22 @@ func (c *Config) getNodeAtIndex(nodeIndex int) (*NodeConfig, error) {
 }
 
 func (c *Config) AddBurnTaxExemptionAddressProposal(chainANode *NodeConfig, zoneName string, addresses ...string) {
-	proposal := taxexemptiontypes.AddTaxExemptionZoneProposal{
-		Title:       "Add Burn Tax Exemption Address",
-		Description: fmt.Sprintf("Add %s to the burn tax exemption address list", strings.Join(addresses, ",")),
-		Zone:        zoneName,
-		Incoming:    true,
-		Outgoing:    true,
-		CrossZone:   true,
-		Addresses:   addresses,
-		Authority:   "terra10d07y265gmmuvt4z0w9aw880jnsr700juxf95n",
+	proposal := map[string]interface{}{
+		"messages": []map[string]interface{}{
+			{
+				"@type":      "/terra.taxexemption.v1.MsgAddTaxExemptionZone",
+				"zone":       zoneName,
+				"outgoing":   true,
+				"incoming":   true,
+				"cross_zone": true,
+				"addresses":  addresses,
+				"authority":  "terra10d07y265gmmuvt4z0w9aw880jnsr700juxf95n",
+			},
+		},
+		"metadata": "ipfs://CID",
+		"deposit":  "100000uluna",
+		"title":    "Add Burn Tax Exemption Address",
+		"summary":  fmt.Sprintf("Add %s to the burn tax exemption address list", strings.Join(addresses, ",")),
 	}
 	proposalJSON, err := json.Marshal(proposal)
 	require.NoError(c.t, err)
@@ -158,7 +166,11 @@ func (c *Config) AddBurnTaxExemptionAddressProposal(chainANode *NodeConfig, zone
 	err = f.Close()
 	require.NoError(c.t, err)
 
-	propNumber := chainANode.SubmitAddBurnTaxExemptionAddressProposal(addresses, initialization.ValidatorWalletName, localProposalFile)
+	_, err = util.CopyFile(
+		localProposalFile,
+		filepath.Join(chainANode.ConfigDir, "add_burn_tax_exemption_address_proposal.json"),
+	)
+	propNumber := chainANode.SubmitAddBurnTaxExemptionAddressProposal(addresses, initialization.ValidatorWalletName, "add_burn_tax_exemption_address_proposal.json")
 
 	chainANode.DepositProposal(propNumber)
 	AllValsVoteOnProposal(c, propNumber)
