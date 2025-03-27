@@ -1175,9 +1175,6 @@ func (s *AnteTestSuite) TestTaxExemptionWithMultipleDenoms() {
 
 			s.txBuilder = s.clientCtx.TxConfig.NewTxBuilder()
 
-			tk.AddBurnTaxExemptionAddress(s.ctx, addrs[0].String())
-			tk.AddBurnTaxExemptionAddress(s.ctx, addrs[1].String())
-
 			mfd := ante.NewFeeDecorator(s.app.AccountKeeper, s.app.BankKeeper, s.app.FeeGrantKeeper, s.app.TaxExemptionKeeper, s.app.TreasuryKeeper, s.app.DistrKeeper, s.app.TaxKeeper)
 			antehandler := sdk.ChainAnteDecorators(mfd)
 			pd := post.NewTaxDecorator(s.app.TaxKeeper, bk, ak, tk)
@@ -1338,6 +1335,7 @@ func (s *AnteTestSuite) TestTaxExemptionWithGasPriceEnabled() {
 
 			require := s.Require()
 			tk := s.app.TreasuryKeeper
+			te := s.app.TaxExemptionKeeper
 			ak := s.app.AccountKeeper
 			bk := s.app.BankKeeper
 
@@ -1351,8 +1349,11 @@ func (s *AnteTestSuite) TestTaxExemptionWithGasPriceEnabled() {
 
 			s.txBuilder = s.clientCtx.TxConfig.NewTxBuilder()
 
-			tk.AddBurnTaxExemptionAddress(s.ctx, addrs[0].String())
-			tk.AddBurnTaxExemptionAddress(s.ctx, addrs[1].String())
+			zone := types.Zone{Name: "Zone", Outgoing: true, Incoming: true, CrossZone: true}
+
+			te.AddTaxExemptionZone(s.ctx, zone)
+			te.AddTaxExemptionAddress(s.ctx, zone.Name, addrs[0].String())
+			te.AddTaxExemptionAddress(s.ctx, zone.Name, addrs[1].String())
 
 			mfd := ante.NewFeeDecorator(s.app.AccountKeeper, s.app.BankKeeper, s.app.FeeGrantKeeper, s.app.TaxExemptionKeeper, s.app.TreasuryKeeper, s.app.DistrKeeper, s.app.TaxKeeper)
 			antehandler := sdk.ChainAnteDecorators(mfd)

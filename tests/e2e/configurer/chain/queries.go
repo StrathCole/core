@@ -23,6 +23,7 @@ import (
 
 	taxtypes "github.com/classic-terra/core/v3/x/tax/types"
 	treasurytypes "github.com/classic-terra/core/v3/x/treasury/types"
+	taxexemptiontypes "github.com/classic-terra/core/v3/x/taxexemption/types"
 )
 
 func (n *NodeConfig) QueryGRPCGateway(path string, parameters ...string) ([]byte, error) {
@@ -135,17 +136,17 @@ func (n *NodeConfig) QueryBurnTaxRate() (sdk.Dec, error) {
 	return taxRateResp.TaxRate, nil
 }
 
-func (n *NodeConfig) QueryBurnTaxExemptionList() ([]string, error) {
-	path := "terra/treasury/v1beta1/burn_tax_exemption_list"
+func (n *NodeConfig) QueryBurnTaxExemptionList(zoneName string) ([]string, error) {
+	path := fmt.Sprintf("terra/taxexemption/v1/%s/addresses", zoneName)
 	bz, err := n.QueryGRPCGateway(path)
 	require.NoError(n.t, err)
 
-	var taxRateResp treasurytypes.QueryBurnTaxExemptionListResponse
-	if err := util.Cdc.UnmarshalJSON(bz, &taxRateResp); err != nil {
+	var taxAddressesResp taxexemptiontypes.QueryTaxExemptionAddressResponse
+	if err := util.Cdc.UnmarshalJSON(bz, &taxAddressesResp); err != nil {
 		return nil, err
 	}
 
-	return taxRateResp.Addresses, nil
+	return taxAddressesResp.Addresses, nil
 }
 
 func (n *NodeConfig) QueryContractsFromID(codeID int) ([]string, error) {

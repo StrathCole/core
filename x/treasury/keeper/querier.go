@@ -8,9 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	sdkmath "cosmossdk.io/math"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/query"
 
 	core "github.com/classic-terra/core/v3/types"
 	"github.com/classic-terra/core/v3/x/treasury/types"
@@ -126,22 +124,4 @@ func (q querier) Indicators(c context.Context, _ *types.QueryIndicatorsRequest) 
 	}
 
 	return &res, nil
-}
-
-func (q querier) BurnTaxExemptionList(c context.Context, req *types.QueryBurnTaxExemptionListRequest) (*types.QueryBurnTaxExemptionListResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	sub := prefix.NewStore(ctx.KVStore(q.storeKey), types.BurnTaxExemptionListPrefix)
-	var addresses []string
-
-	pageRes, err := query.FilteredPaginate(sub, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
-		address := string(key)
-		addresses = append(addresses, address)
-
-		return true, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &types.QueryBurnTaxExemptionListResponse{Addresses: addresses, Pagination: pageRes}, nil
 }

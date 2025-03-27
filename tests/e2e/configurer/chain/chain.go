@@ -14,7 +14,7 @@ import (
 	"github.com/classic-terra/core/v3/tests/e2e/configurer/config"
 	"github.com/classic-terra/core/v3/tests/e2e/containers"
 	"github.com/classic-terra/core/v3/tests/e2e/initialization"
-	treasurytypes "github.com/classic-terra/core/v3/x/treasury/types"
+	taxexemptiontypes "github.com/classic-terra/core/v3/x/taxexemption/types"
 )
 
 type Config struct {
@@ -134,11 +134,16 @@ func (c *Config) getNodeAtIndex(nodeIndex int) (*NodeConfig, error) {
 	return c.NodeConfigs[nodeIndex], nil
 }
 
-func (c *Config) AddBurnTaxExemptionAddressProposal(chainANode *NodeConfig, addresses ...string) {
-	proposal := treasurytypes.AddBurnTaxExemptionAddressProposal{
+func (c *Config) AddBurnTaxExemptionAddressProposal(chainANode *NodeConfig, zoneName string, addresses ...string) {
+	proposal := taxexemptiontypes.AddTaxExemptionZoneProposal{
 		Title:       "Add Burn Tax Exemption Address",
 		Description: fmt.Sprintf("Add %s to the burn tax exemption address list", strings.Join(addresses, ",")),
+		Zone:        zoneName,
+		Incoming:    true,
+		Outgoing:    true,
+		CrossZone:   true,
 		Addresses:   addresses,
+		Authority:   "terra10d07y265gmmuvt4z0w9aw880jnsr700juxf95n",
 	}
 	proposalJSON, err := json.Marshal(proposal)
 	require.NoError(c.t, err)
@@ -153,7 +158,7 @@ func (c *Config) AddBurnTaxExemptionAddressProposal(chainANode *NodeConfig, addr
 	err = f.Close()
 	require.NoError(c.t, err)
 
-	propNumber := chainANode.SubmitAddBurnTaxExemptionAddressProposal(addresses, initialization.ValidatorWalletName)
+	propNumber := chainANode.SubmitAddBurnTaxExemptionAddressProposal(addresses, initialization.ValidatorWalletName, localProposalFile)
 
 	chainANode.DepositProposal(propNumber)
 	AllValsVoteOnProposal(c, propNumber)

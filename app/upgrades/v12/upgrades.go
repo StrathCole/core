@@ -3,12 +3,13 @@ package v12
 import (
 	"github.com/classic-terra/core/v3/app/keepers"
 	"github.com/classic-terra/core/v3/app/upgrades"
-	treasurytypes "github.com/classic-terra/core/v3/x/treasury/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
+
+var BurnTaxExemptionListPrefix = []byte{0x20} // prefix for burn tax exemption list
 
 func CreateV12UpgradeHandler(
 	mm *module.Manager,
@@ -21,7 +22,7 @@ func CreateV12UpgradeHandler(
 		// tax exemption keeper is now a module
 
 		// get old tax exemption keeper
-		sub := prefix.NewStore(c.KVStore(k.TreasuryKeeper.GetStoreKey()), treasurytypes.BurnTaxExemptionListPrefix)
+		sub := prefix.NewStore(c.KVStore(k.TreasuryKeeper.GetStoreKey()), BurnTaxExemptionListPrefix)
 
 		intoZone := "Binance"
 
@@ -34,6 +35,9 @@ func CreateV12UpgradeHandler(
 
 			// add tax exemption address to new tax exemption keeper
 			k.TaxExemptionKeeper.AddTaxExemptionAddress(c, intoZone, address)
+
+			// delete old key
+			sub.Delete(iterator.Key())
 		}
 
 		return mm.RunMigrations(c, cfg, fromVM)

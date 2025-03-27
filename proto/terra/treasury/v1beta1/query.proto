@@ -49,11 +49,6 @@ service Query {
     option (google.api.http).get = "/terra/treasury/v1beta1/indicators";
   }
 
-  // BurnTaxExemptionList returns all registered burn tax exemption addresses
-  rpc BurnTaxExemptionList(QueryBurnTaxExemptionListRequest) returns (QueryBurnTaxExemptionListResponse) {
-    option (google.api.http).get = "/terra/treasury/v1beta1/burn_tax_exemption_list";
-  }
-
   // Params queries all parameters.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/terra/treasury/v1beta1/params";
@@ -178,16 +173,4 @@ message QueryParamsRequest {}
 message QueryParamsResponse {
   // params defines the parameters of the module.
   Params params = 1 [(gogoproto.nullable) = false];
-}
-
-// QueryBurnTaxExemptionListRequest is the request type for the Query/BurnTaxExemptionList RPC method.
-message QueryBurnTaxExemptionListRequest {
-  cosmos.base.query.v1beta1.PageRequest pagination = 2;
-}
-
-// QueryBurnTaxExemptionListResponse is response type for the Query/BurnTaxExemptionList RPC method.
-message QueryBurnTaxExemptionListResponse {
-  repeated string addresses = 1;
-
-  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

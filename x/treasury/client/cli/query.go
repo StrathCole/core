@@ -30,7 +30,6 @@ func GetQueryCmd() *cobra.Command {
 		GetCmdQuerySeigniorageProceeds(),
 		GetCmdQueryIndicators(),
 		GetCmdQueryParams(),
-		GetCmdQueryExemptlist(),
 	)
 
 	return oracleQueryCmd
@@ -274,36 +273,5 @@ func GetCmdQueryParams() *cobra.Command {
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
-func GetCmdQueryExemptlist() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "burn-tax-exemption-list",
-		Args:  cobra.NoArgs,
-		Short: "Query all burn tax exemption addresses",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-			queryClient := types.NewQueryClient(clientCtx)
-
-			pageReq, err := client.ReadPageRequest(cmd.Flags())
-			if err != nil {
-				return err
-			}
-
-			// Query store
-			res, err := queryClient.BurnTaxExemptionList(context.Background(), &types.QueryBurnTaxExemptionListRequest{Pagination: pageReq})
-			if err != nil {
-				return err
-			}
-			return clientCtx.PrintProto(res)
-		},
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-	flags.AddPaginationFlagsToCmd(cmd, "burn tax exemption list")
 	return cmd
 }

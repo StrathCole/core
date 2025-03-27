@@ -116,14 +116,12 @@ func (n *NodeConfig) SubmitParamChangeProposal(proposalJSON, from string) {
 	n.LogActionF("successfully submitted param change proposal")
 }
 
-func (n *NodeConfig) SubmitAddBurnTaxExemptionAddressProposal(addresses []string, walletName string) int {
+func (n *NodeConfig) SubmitAddBurnTaxExemptionAddressProposal(addresses []string, walletName string, filePath string) int {
 	n.LogActionF("submitting add burn tax exemption address proposal %s", addresses)
 
 	cmd := []string{
-		"terrad", "tx", "gov", "submit-legacy-proposal",
-		"add-burn-tax-exemption-address", strings.Join(addresses, ","),
-		"--title=\"burn tax exemption address\"",
-		"--description=\"\"burn tax exemption address",
+		"terrad", "tx", "gov", "submit-proposal",
+		filePath,
 		fmt.Sprintf("--from=%s", walletName),
 	}
 

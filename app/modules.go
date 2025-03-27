@@ -29,7 +29,6 @@ import (
 	"github.com/classic-terra/core/v3/x/taxexemption"
 	taxexemptiontypes "github.com/classic-terra/core/v3/x/taxexemption/types"
 	"github.com/classic-terra/core/v3/x/treasury"
-	treasuryclient "github.com/classic-terra/core/v3/x/treasury/client"
 	treasurytypes "github.com/classic-terra/core/v3/x/treasury/types"
 	"github.com/classic-terra/core/v3/x/vesting"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -108,8 +107,6 @@ var (
 				upgradeclient.LegacyCancelProposalHandler,
 				ibcclientclient.UpdateClientProposalHandler,
 				ibcclientclient.UpgradeProposalHandler,
-				treasuryclient.ProposalAddBurnTaxExemptionAddressHandler,
-				treasuryclient.ProposalRemoveBurnTaxExemptionAddressHandler,
 			},
 		),
 		customparams.AppModuleBasic{},
