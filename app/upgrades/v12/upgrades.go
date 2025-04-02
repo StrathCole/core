@@ -4,7 +4,6 @@ import (
 	"github.com/classic-terra/core/v3/app/keepers"
 	"github.com/classic-terra/core/v3/app/upgrades"
 	taxexemptiontypes "github.com/classic-terra/core/v3/x/taxexemption/types"
-
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -28,28 +27,41 @@ func CreateV12UpgradeHandler(
 
 		intoZone := "Binance"
 
-		bnbZone := taxexemptiontypes.Zone{
-			Name:      intoZone,
-			Incoming:  true,
-			Outgoing:  true,
-			CrossZone: true,
-		}
-
 		// iterate through all tax exemptions
 		iterator := sub.Iterator(nil, nil)
+		addresses := []string{}
 		defer iterator.Close()
 		for ; iterator.Valid(); iterator.Next() {
 			// get tax exemption address
 			address := string(iterator.Key())
-
-			k.TaxExemptionKeeper.AddTaxExemptionZone(c, bnbZone)
-			// add tax exemption address to new tax exemption keeper
-			k.TaxExemptionKeeper.AddTaxExemptionAddress(c, intoZone, address)
-
+			addresses = append(addresses, address)
 			// delete old key
 			sub.Delete(iterator.Key())
 		}
 
-		return mm.RunMigrations(c, cfg, fromVM)
+		versionMap, err := mm.RunMigrations(c, cfg, fromVM)
+		if err != nil {
+			return nil, err
+		}
+
+		// add tax exemption address to new tax exemption keeper
+		err = k.TaxExemptionKeeper.AddTaxExemptionZone(c, taxexemptiontypes.Zone{
+			Name:      intoZone,
+			Outgoing:  true,
+			Incoming:  true,
+			CrossZone: true,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, address := range addresses {
+			err = k.TaxExemptionKeeper.AddTaxExemptionAddress(c, intoZone, address)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return versionMap, nil
 	}
 }
