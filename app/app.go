@@ -47,6 +47,7 @@ import (
 
 	// upgrades
 	"github.com/classic-terra/core/v3/app/upgrades"
+	v11_2 "github.com/classic-terra/core/v3/app/upgrades/v11_2"
 	v2 "github.com/classic-terra/core/v3/app/upgrades/v2"
 	v3 "github.com/classic-terra/core/v3/app/upgrades/v3"
 	v4 "github.com/classic-terra/core/v3/app/upgrades/v4"
@@ -101,6 +102,7 @@ var (
 		v10_1.Upgrade,
 		v11.Upgrade,
 		v11_1.Upgrade,
+		v11_2.Upgrade,
 		v12.Upgrade,
 	}
 
@@ -149,7 +151,7 @@ func init() {
 
 // NewTerraApp returns a reference to an initialized TerraApp.
 func NewTerraApp(
-	logger log.Logger, db dbm.DB, _ io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
+	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, encodingConfig terraappparams.EncodingConfig, appOpts servertypes.AppOptions,
 	wasmOpts []wasmkeeper.Option, baseAppOptions ...func(*baseapp.BaseApp),
 ) *TerraApp {
@@ -183,6 +185,7 @@ func NewTerraApp(
 
 	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
+	bApp.SetCommitMultiStoreTracer(traceStore)
 
 	app := &TerraApp{
 		BaseApp:           bApp,
