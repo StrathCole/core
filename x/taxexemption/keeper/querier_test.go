@@ -41,7 +41,7 @@ func TestQueryTaxable(t *testing.T) {
 	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone7", Outgoing: true, Incoming: true, CrossZone: false})
 	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone8", Outgoing: true, Incoming: true, CrossZone: true})
 
-	zones := []string {
+	zones := []string{
 		"zone1",
 		"zone2",
 		"zone3",
@@ -60,7 +60,7 @@ func TestQueryTaxable(t *testing.T) {
 	// Case 2: Sender & recipient have no zone
 	res, err := querier.Taxable(ctx, &types.QueryTaxableRequest{
 		FromAddress: address.String(),
-		ToAddress: address2.String(),
+		ToAddress:   address2.String(),
 	})
 	require.NoError(t, err)
 	require.Equal(t, true, res.Taxable)
@@ -72,21 +72,21 @@ func TestQueryTaxable(t *testing.T) {
 		input.TaxExemptionKeeper.AddTaxExemptionAddress(input.Ctx, zone, address4.String()) // Recipient
 		res, err = querier.Taxable(ctx, &types.QueryTaxableRequest{
 			FromAddress: address3.String(),
-			ToAddress: address4.String(),
+			ToAddress:   address4.String(),
 		})
 		require.NoError(t, err)
 		require.Equal(t, false, res.Taxable)
-		
+
 		input.TaxExemptionKeeper.RemoveTaxExemptionAddress(input.Ctx, zone, address4.String())
 	}
-	
+
 	// 3.2: Recipient have CrossZone and Incoming, sender have any zone
 	input.TaxExemptionKeeper.AddTaxExemptionAddress(input.Ctx, "zone4", address5.String()) // Recipient
 	for _, zone := range zones {
 		input.TaxExemptionKeeper.AddTaxExemptionAddress(input.Ctx, zone, address6.String()) // Sender
 		res, err = querier.Taxable(ctx, &types.QueryTaxableRequest{
 			FromAddress: address6.String(),
-			ToAddress: address5.String(),
+			ToAddress:   address5.String(),
 		})
 		require.NoError(t, err)
 		require.Equal(t, false, res.Taxable)
@@ -96,7 +96,7 @@ func TestQueryTaxable(t *testing.T) {
 
 	// Case 4: Only sender has zone
 	// 4.1: Sender doesn't have Outcoming, recipient doesn't matter
-	zones1 := []string {
+	zones1 := []string{
 		"zone1",
 		"zone2",
 		"zone3",
@@ -113,7 +113,7 @@ func TestQueryTaxable(t *testing.T) {
 		input.TaxExemptionKeeper.RemoveTaxExemptionAddress(input.Ctx, zone, address7.String())
 	}
 	// 4.2: Sender has Outcoming, recipient doesn't matter
-	zones2 := []string {
+	zones2 := []string{
 		"zone5",
 		"zone6",
 		"zone7",
@@ -132,7 +132,7 @@ func TestQueryTaxable(t *testing.T) {
 
 	// Case 5: Only recipient has zone
 	// 5.1: Recipient doesn't have Incoming, sender doesn't matter
-	zones3 := []string {
+	zones3 := []string{
 		"zone1",
 		"zone2",
 		"zone5",
@@ -149,7 +149,7 @@ func TestQueryTaxable(t *testing.T) {
 		input.TaxExemptionKeeper.RemoveTaxExemptionAddress(input.Ctx, zone, address7.String())
 	}
 	// 5.2: Recipient has Incoming, sender doesn't matter
-	zones4 := []string {
+	zones4 := []string{
 		"zone3",
 		"zone4",
 		"zone7",
@@ -175,33 +175,33 @@ func TestTaxExemptionZonesList(t *testing.T) {
 	// Create zone tests
 	zones := []types.Zone{
 		{
-			Name: "zone1",
-			Outgoing: true,
-			Incoming: true,
+			Name:      "zone1",
+			Outgoing:  true,
+			Incoming:  true,
 			CrossZone: true,
 		},
 		{
-			Name: "zone2",
-			Outgoing: false,
-			Incoming: true,
+			Name:      "zone2",
+			Outgoing:  false,
+			Incoming:  true,
 			CrossZone: false,
 		},
 		{
-			Name: "zone3",
-			Outgoing: true,
-			Incoming: false,
+			Name:      "zone3",
+			Outgoing:  true,
+			Incoming:  false,
 			CrossZone: false,
 		},
 		{
-			Name: "zone4",
-			Outgoing: false,
-			Incoming: false,
+			Name:      "zone4",
+			Outgoing:  false,
+			Incoming:  false,
 			CrossZone: true,
 		},
 		{
-			Name: "zone5",
-			Outgoing: false,
-			Incoming: false,
+			Name:      "zone5",
+			Outgoing:  false,
+			Incoming:  false,
 			CrossZone: false,
 		},
 	}
