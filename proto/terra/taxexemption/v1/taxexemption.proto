@@ -1,5 +1,5 @@
 syntax = "proto3";
-package terra.taxexemption.v1beta1;
+package terra.taxexemption.v1;
 
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
@@ -28,7 +28,7 @@ message AddTaxExemptionZoneProposal {
     option (gogoproto.equal)                   = false;
     option (gogoproto.goproto_getters)         = false;
     option (gogoproto.goproto_stringer)        = false;
-    option (cosmos_proto.implements_interface) = "cosmos.gov.v1beta1.Content";
+    option (cosmos_proto.implements_interface) = "cosmos.gov.v1.Content";
 
     string title       = 1 [(gogoproto.moretags) = "yaml:\"title\""];
     string description = 2 [(gogoproto.moretags) = "yaml:\"description\""];
@@ -45,7 +45,7 @@ message RemoveTaxExemptionZoneProposal {
     option (gogoproto.equal)                   = false;
     option (gogoproto.goproto_getters)         = false;
     option (gogoproto.goproto_stringer)        = false;
-    option (cosmos_proto.implements_interface) = "cosmos.gov.v1beta1.Content";
+    option (cosmos_proto.implements_interface) = "cosmos.gov.v1.Content";
 
     string title       = 1 [(gogoproto.moretags) = "yaml:\"title\""];
     string description = 2 [(gogoproto.moretags) = "yaml:\"description\""];
@@ -57,7 +57,7 @@ message ModifyTaxExemptionZoneProposal {
     option (gogoproto.equal)                   = false;
     option (gogoproto.goproto_getters)         = false;
     option (gogoproto.goproto_stringer)        = false;
-    option (cosmos_proto.implements_interface) = "cosmos.gov.v1beta1.Content";
+    option (cosmos_proto.implements_interface) = "cosmos.gov.v1.Content";
 
     string title       = 1 [(gogoproto.moretags) = "yaml:\"title\""];
     string description = 2 [(gogoproto.moretags) = "yaml:\"description\""];
@@ -72,7 +72,7 @@ message ModifyTaxExemptionZoneProposal {
     option (gogoproto.equal)                   = false;
     option (gogoproto.goproto_getters)         = false;
     option (gogoproto.goproto_stringer)        = false;
-    option (cosmos_proto.implements_interface) = "cosmos.gov.v1beta1.Content";
+    option (cosmos_proto.implements_interface) = "cosmos.gov.v1.Content";
 
     string title       = 1 [(gogoproto.moretags) = "yaml:\"title\""];
     string description = 2 [(gogoproto.moretags) = "yaml:\"description\""];
@@ -85,7 +85,7 @@ message ModifyTaxExemptionZoneProposal {
     option (gogoproto.equal)                   = false;
     option (gogoproto.goproto_getters)         = false;
     option (gogoproto.goproto_stringer)        = false;
-    option (cosmos_proto.implements_interface) = "cosmos.gov.v1beta1.Content";
+    option (cosmos_proto.implements_interface) = "cosmos.gov.v1.Content";
 
     string title       = 1 [(gogoproto.moretags) = "yaml:\"title\""];
     string description = 2 [(gogoproto.moretags) = "yaml:\"description\""];

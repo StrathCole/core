@@ -55,6 +55,9 @@ func (k Keeper) GetTaxExemptionZone(ctx sdk.Context, zoneName string) (types.Zon
 	// Ensure the storeKey is properly set up in the Keeper
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.TaxExemptionZonePrefix)
 
+	if zoneName == "" {
+		return types.Zone{}, fmt.Errorf("zone name cannot be empty")
+	}
 	// Convert the zone name to byte slice which will be used as the key
 	key := []byte(zoneName)
 
@@ -78,6 +81,9 @@ func (k Keeper) AddTaxExemptionZone(ctx sdk.Context, zone types.Zone) error {
 	// Ensure the storeKey is properly set up in the Keeper
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.TaxExemptionZonePrefix)
 
+	if zone.Name == "" {
+		return fmt.Errorf("zone name cannot be empty")
+	}
 	// Convert the zone name to byte slice which will be used as the key
 	key := []byte(zone.Name)
 
@@ -94,6 +100,9 @@ func (k Keeper) ModifyTaxExemptionZone(ctx sdk.Context, zone types.Zone) error {
 	// Ensure the storeKey is properly set up in the Keeper
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.TaxExemptionZonePrefix)
 
+	if zone.Name == "" {
+		return fmt.Errorf("zone name cannot be empty")
+	}
 	// Convert the zone name to byte slice which will be used as the key
 	key := []byte(zone.Name)
 
@@ -115,6 +124,9 @@ func (k Keeper) RemoveTaxExemptionZone(ctx sdk.Context, zoneName string) error {
 	// Ensure the storeKey is properly set up in the Keeper
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.TaxExemptionZonePrefix)
 
+	if zoneName == "" {
+		return fmt.Errorf("zone name cannot be empty")
+	}
 	// Convert the zone name to byte slice which will be used as the key
 	key := []byte(zoneName)
 
@@ -273,9 +285,11 @@ func (k Keeper) ListTaxExemptionZones(c sdk.Context, req *types.QueryTaxExemptio
 
 	// Create a paginated iterator over the store
 	pageRes, err := query.FilteredPaginate(sub, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
-		var zone types.Zone
-		k.cdc.MustUnmarshal(value, &zone)
-		zones = append(zones, zone)
+		if accumulate {
+			var zone types.Zone
+			k.cdc.MustUnmarshal(value, &zone)
+			zones = append(zones, zone)
+		}
 
 		return true, nil
 	})

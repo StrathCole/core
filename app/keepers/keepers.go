@@ -357,7 +357,7 @@ func NewAppKeepers(
 		appCodec, appKeepers.keys[taxexemptiontypes.StoreKey],
 		appKeepers.GetSubspace(taxexemptiontypes.ModuleName),
 		appKeepers.AccountKeeper,
-		string(appKeepers.AccountKeeper.GetModuleAddress(govtypes.ModuleName)),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
 	hooksKeeper := ibchookskeeper.NewKeeper(
