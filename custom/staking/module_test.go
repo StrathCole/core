@@ -3,12 +3,14 @@ package staking_test
 import (
 	"testing"
 
-	apptesting "github.com/classic-terra/core/v2/app/testing"
-	simapp "github.com/cosmos/cosmos-sdk/simapp"
+	"cosmossdk.io/math"
+	apptesting "github.com/classic-terra/core/v3/app/testing"
+	"github.com/classic-terra/core/v3/types"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	teststaking "github.com/cosmos/cosmos-sdk/x/staking/teststaking"
+	"github.com/cosmos/cosmos-sdk/x/staking/testutil"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/suite"
 )
@@ -21,9 +23,9 @@ func TestStakingTestSuite(t *testing.T) {
 	suite.Run(t, new(StakingTestSuite))
 }
 
-// go test -v -run=TestStakingTestSuite/TestValidatorVPLimit github.com/classic-terra/core/v2/custom/staking
+// go test -v -run=TestStakingTestSuite/TestValidatorVPLimit github.com/classic-terra/core/v3/custom/staking
 func (s *StakingTestSuite) TestValidatorVPLimit() {
-	s.KeeperTestHelper.Setup(s.T())
+	s.KeeperTestHelper.Setup(s.T(), types.ColumbusChainID)
 
 	// construct new validators, to a total of 10 validators, each with 10% of the total voting power
 	num := 9
@@ -33,17 +35,17 @@ func (s *StakingTestSuite) TestValidatorVPLimit() {
 		err := s.App.BankKeeper.DelegateCoinsFromAccountToModule(s.Ctx, addrDels[i], stakingtypes.NotBondedPoolName, sdk.NewCoins(sdk.NewInt64Coin("uluna", 1000000)))
 		s.Require().NoError(err)
 	}
-	valAddrs := simapp.ConvertAddrsToValAddrs(addrDels)
-	PKs := simapp.CreateTestPubKeys(num)
+	valAddrs := simtestutil.ConvertAddrsToValAddrs(addrDels)
+	PKs := simtestutil.CreateTestPubKeys(num)
 
-	var amts [9]sdk.Int
+	var amts [9]math.Int
 	for i := range amts {
 		amts[i] = sdk.NewInt(1000000)
 	}
 
 	var validators [9]stakingtypes.Validator
 	for i, amt := range amts {
-		validators[i] = teststaking.NewValidator(s.T(), valAddrs[i], PKs[i])
+		validators[i] = testutil.NewValidator(s.T(), valAddrs[i], PKs[i])
 		validators[i], _ = validators[i].AddTokensFromDel(amt)
 	}
 
@@ -70,14 +72,9 @@ func (s *StakingTestSuite) TestValidatorVPLimit() {
 	s.Require().True(found)
 	validators[0] = validator
 
-	// test that the code panic on a delegation that surpasses the 20% VP allowed
-	// raise voting power of validator 0 by 1 (2+1)/(11+1) = 0.250000 > 0.2
-	defer func() {
-		if r := recover(); r == nil {
-			s.T().Errorf("The code did not panic")
-		}
-	}()
-
 	s.App.StakingKeeper.SetDelegation(s.Ctx, stakingtypes.NewDelegation(s.TestAccs[0], valAddrs[0], sdk.NewDec(1000000)))
-	s.App.StakingKeeper.Delegate(s.Ctx, s.TestAccs[0], sdk.NewInt(1000000), stakingtypes.Unbonded, validators[0], true)
+	_, err = s.App.StakingKeeper.Delegate(s.Ctx, s.TestAccs[0], sdk.NewInt(1000000), stakingtypes.Unbonded, validators[0], true)
+	// Assert that an error was returned
+	s.Require().Error(err)
+	s.Require().Equal("validator power is over the allowed limit", err.Error())
 }

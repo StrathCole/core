@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	"github.com/classic-terra/core/v2/x/treasury/types"
+	"github.com/classic-terra/core/v3/x/treasury/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -64,6 +64,15 @@ func (k Keeper) GetMinInitialDepositRatio(ctx sdk.Context) (res sdk.Dec) {
 
 func (k Keeper) SetMinInitialDepositRatio(ctx sdk.Context, minInitialDepositRatio sdk.Dec) {
 	k.paramSpace.Set(ctx, types.KeyMinInitialDepositRatio, minInitialDepositRatio)
+}
+
+func (k Keeper) GetOracleSplitRate(ctx sdk.Context) (res sdk.Dec) {
+	k.paramSpace.Get(ctx, types.KeyOracleSplit, &res)
+	return
+}
+
+func (k Keeper) SetOracleSplitRate(ctx sdk.Context, oracleSplit sdk.Dec) {
+	k.paramSpace.Set(ctx, types.KeyOracleSplit, oracleSplit)
 }
 
 // GetParams returns the total set of treasury parameters.

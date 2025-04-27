@@ -1,16 +1,30 @@
 # syntax=docker/dockerfile:1
 
 ARG source=./
-ARG GO_VERSION="1.20"
+ARG GO_VERSION="1.22.12"
 ARG BUILDPLATFORM=linux/amd64
-ARG BASE_IMAGE="golang:${GO_VERSION}-alpine"
-FROM --platform=${BUILDPLATFORM} ${BASE_IMAGE} as base
+
+# Get Go installation from the official image
+FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION} AS go-source
+
+# Use Alpine 3.18 as base for muslc compatibility
+FROM --platform=${BUILDPLATFORM} alpine:3.18 AS base
+
+# Copy Go from the official image
+COPY --from=go-source /usr/local/go /usr/local/go
+# Setup Go environment properly
+ENV GOPATH="/go" \
+    PATH="/usr/local/go/bin:/go/bin:${PATH}"
+# Create necessary directories
+RUN mkdir -p "$GOPATH/bin" "$GOPATH/src" && \
+    # Verify Go installation
+    go version
 
 ###############################################################################
 # Builder
 ###############################################################################
 
-FROM base as builder-stage-1
+FROM base AS builder-stage-1
 
 ARG source
 ARG GIT_COMMIT
@@ -52,8 +66,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # Cosmwasm - Download correct libwasmvm version and verify checksum
 RUN set -eux &&\
-    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm | cut -d ' ' -f 5) && \
-    WASMVM_DOWNLOADS="https://github.com/classic-terra/wasmvm/releases/download/${WASMVM_VERSION}"; \
+    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm | cut -d ' ' -f 2) && \
+    WASMVM_DOWNLOADS="https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}"; \
     wget ${WASMVM_DOWNLOADS}/checksums.txt -O /tmp/checksums.txt; \
     if [ ${BUILDPLATFORM} = "linux/amd64" ]; then \
         WASMVM_URL="${WASMVM_DOWNLOADS}/libwasmvm_muslc.x86_64.a"; \
@@ -70,7 +84,7 @@ RUN set -eux &&\
 
 ###############################################################################
 
-FROM builder-stage-1 as builder-stage-2
+FROM builder-stage-1 AS builder-stage-2
 
 ARG source
 ARG GOOS=linux \
@@ -102,9 +116,9 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 ################################################################################
 
-FROM alpine as terra-core
+FROM alpine AS terra-core
 
-RUN apk update && apk add wget lz4 aria2 curl jq gawk coreutils "zlib>1.2.12-r2" "libssl1.1>1.1.1q-r0"
+RUN apk update && apk add wget lz4 aria2 curl jq gawk coreutils "zlib>1.2.12-r2" libssl3
 
 COPY --from=builder-stage-2 /go/bin/terrad /usr/local/bin/terrad
 

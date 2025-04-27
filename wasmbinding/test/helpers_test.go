@@ -6,7 +6,7 @@ import (
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	apptesting "github.com/classic-terra/core/v2/app/testing"
+	apptesting "github.com/classic-terra/core/v3/app/testing"
 	"github.com/stretchr/testify/suite"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,7 +21,7 @@ func TestWasmTestSuite(t *testing.T) {
 }
 
 func (s *WasmTestSuite) SetupTest() {
-	s.Setup(s.T())
+	s.Setup(s.T(), apptesting.SimAppChainID)
 }
 
 func (s *WasmTestSuite) InstantiateContract(addr sdk.AccAddress, contractPath string) sdk.AccAddress {

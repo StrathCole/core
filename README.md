@@ -5,8 +5,6 @@
 
 **Classic** is the reference implementation of the Terra protocol, written in Golang. Terra Core is built atop [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) and uses [Tendermint](https://github.com/tendermint/tendermint) BFT consensus. If you intend to work on Terra Core source, it is recommended that you familiarize yourself with the concepts in those projects.
 
-Upon the implosion of Terra, a group of rebels seized control of the blockchain.  Terra's future is uncertain, but the rebels are now firmly in control. 
-
 ## Installation
 
 ### Binaries
@@ -17,7 +15,7 @@ The easiest way to get started is by downloading a pre-built binary for your ope
 
 **Step 1. Install Golang**
 
-Go v1.20 is required for Terra Core.
+Go v1.22 is required for Terra Core.
 
 If you haven't already, install Golang by following the [official docs](https://golang.org/doc/install). Make sure that your `GOPATH` and `GOBIN` environment variables are properly set up.
 
@@ -274,12 +272,12 @@ journalctl -t terrad -r
 journalctl -t terrad -f
 ```
 
-## Using `docker-compose`
+## Using `docker compose`
 
 1. Install Docker
 
 	- [Docker Install documentation](https://docs.docker.com/install/)
-	- [Docker-Compose Install documentation](https://docs.docker.com/compose/install/)
+	- [Docker Compose Install documentation](https://docs.docker.com/compose/install/)
 
 2. Create a new folder on your local machine and copy docker-compose\docker-compose.yml
 
@@ -288,19 +286,19 @@ journalctl -t terrad -f
 4. Bring up your stack by running
 
 	```bash
-	docker-compose up -d
+	docker compose up -d
 	```
 
 5. Add your wallet
     ```bash
-	docker-compose exec node sh /keys-add.sh
+	docker compose exec node sh /keys-add.sh
 	```
 
 6. Copy your terra wallet address and go to the terra faucet here -> http://45.79.139.229:3000/ Put your address in and give yourself luna coins.
 
 7. Start the validator
 	```bash
-	docker-compose exec node sh /create-validator.sh
+	docker compose exec node sh /create-validator.sh
 	```
 
 ### Cheat Sheet:
@@ -308,33 +306,33 @@ journalctl -t terrad -f
 #### Start
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 #### Stop
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 #### View Logs
 
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 #### Run Terrad Commands Example
 
 ```bash
-docker-compose exec node terrad status
+docker compose exec node terrad status
 ```
 
 #### Upgrade
 
 ```bash
-docker-compose down
-docker-compose pull
-docker-compose up -d
+docker compose down
+docker compose pull
+docker compose up -d
 ```
 
 #### Build from source

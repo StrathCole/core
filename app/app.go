@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	stdlog "log"
@@ -12,25 +13,27 @@ import (
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
+	appmempool "github.com/classic-terra/core/v3/app/mempool"
+	dbm "github.com/cometbft/cometbft-db"
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmjson "github.com/cometbft/cometbft/libs/json"
+	"github.com/cometbft/cometbft/libs/log"
+	tmos "github.com/cometbft/cometbft/libs/os"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
+	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -38,25 +41,41 @@ import (
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/classic-terra/core/v2/app/keepers"
-	terraappparams "github.com/classic-terra/core/v2/app/params"
+	"github.com/classic-terra/core/v3/app/keepers"
+	terraappparams "github.com/classic-terra/core/v3/app/params"
+	customserver "github.com/classic-terra/core/v3/server"
 
 	// upgrades
-	"github.com/classic-terra/core/v2/app/upgrades"
-	v2 "github.com/classic-terra/core/v2/app/upgrades/v2"
-	v3 "github.com/classic-terra/core/v2/app/upgrades/v3"
-	v4 "github.com/classic-terra/core/v2/app/upgrades/v4"
-	v5 "github.com/classic-terra/core/v2/app/upgrades/v5"
-	v6 "github.com/classic-terra/core/v2/app/upgrades/v6"
+	"github.com/classic-terra/core/v3/app/upgrades"
+	v11_2 "github.com/classic-terra/core/v3/app/upgrades/v11_2"
+	v2 "github.com/classic-terra/core/v3/app/upgrades/v2"
+	v3 "github.com/classic-terra/core/v3/app/upgrades/v3"
+	v4 "github.com/classic-terra/core/v3/app/upgrades/v4"
+	v5 "github.com/classic-terra/core/v3/app/upgrades/v5"
+	v6 "github.com/classic-terra/core/v3/app/upgrades/v6"
+	v6_1 "github.com/classic-terra/core/v3/app/upgrades/v6_1"
+	v7 "github.com/classic-terra/core/v3/app/upgrades/v7"
+	v7_1 "github.com/classic-terra/core/v3/app/upgrades/v7_1"
+	v8 "github.com/classic-terra/core/v3/app/upgrades/v8"
+	v8_1 "github.com/classic-terra/core/v3/app/upgrades/v8_1"
+	v8_2 "github.com/classic-terra/core/v3/app/upgrades/v8_2"
+	v8_3 "github.com/classic-terra/core/v3/app/upgrades/v8_3"
 
-	customante "github.com/classic-terra/core/v2/custom/auth/ante"
-	custompost "github.com/classic-terra/core/v2/custom/auth/post"
-	customauthtx "github.com/classic-terra/core/v2/custom/auth/tx"
+	// v9 had been used by tax2gas and has to be skipped
+	v10_1 "github.com/classic-terra/core/v3/app/upgrades/v10_1"
+	v11 "github.com/classic-terra/core/v3/app/upgrades/v11"
+	v11_1 "github.com/classic-terra/core/v3/app/upgrades/v11_1"
+
+	customante "github.com/classic-terra/core/v3/custom/auth/ante"
+	custompost "github.com/classic-terra/core/v3/custom/auth/post"
+	customauthtx "github.com/classic-terra/core/v3/custom/auth/tx"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	// unnamed import of statik for swagger UI support
-	_ "github.com/classic-terra/core/v2/client/docs/statik"
+	_ "github.com/classic-terra/core/v3/client/docs/statik"
 )
 
 const appName = "TerraApp"
@@ -66,7 +85,24 @@ var (
 	DefaultNodeHome string
 
 	// Upgrades defines upgrades to be applied to the network
-	Upgrades = []upgrades.Upgrade{v2.Upgrade, v3.Upgrade, v4.Upgrade, v5.Upgrade, v6.Upgrade}
+	Upgrades = []upgrades.Upgrade{
+		v2.Upgrade,
+		v3.Upgrade,
+		v4.Upgrade,
+		v5.Upgrade,
+		v6.Upgrade,
+		v6_1.Upgrade,
+		v7.Upgrade,
+		v7_1.Upgrade,
+		v8.Upgrade,
+		v8_1.Upgrade,
+		v8_2.Upgrade,
+		v8_3.Upgrade,
+		v10_1.Upgrade,
+		v11.Upgrade,
+		v11_1.Upgrade,
+		v11_2.Upgrade,
+	}
 
 	// Forks defines forks to be applied to the network
 	Forks = []upgrades.Fork{}
@@ -74,7 +110,7 @@ var (
 
 // Verify app interface at compile time
 var (
-	_ simapp.App              = (*TerraApp)(nil)
+	_ runtime.AppI            = (*TerraApp)(nil)
 	_ servertypes.Application = (*TerraApp)(nil)
 )
 
@@ -87,6 +123,7 @@ type TerraApp struct {
 
 	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
+	txConfig          client.TxConfig
 	interfaceRegistry codectypes.InterfaceRegistry
 
 	invCheckPeriod uint
@@ -113,23 +150,47 @@ func init() {
 // NewTerraApp returns a reference to an initialized TerraApp.
 func NewTerraApp(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
-	homePath string, invCheckPeriod uint, encodingConfig terraappparams.EncodingConfig, appOpts servertypes.AppOptions,
-	wasmOpts []wasm.Option, baseAppOptions ...func(*baseapp.BaseApp),
+	homePath string, encodingConfig terraappparams.EncodingConfig, appOpts servertypes.AppOptions,
+	wasmOpts []wasmkeeper.Option, baseAppOptions ...func(*baseapp.BaseApp),
 ) *TerraApp {
 	appCodec := encodingConfig.Marshaler
 	legacyAmino := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
+	txConfig := encodingConfig.TxConfig
 
-	bApp := baseapp.NewBaseApp(appName, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
-	bApp.SetCommitMultiStoreTracer(traceStore)
-	bApp.SetVersion(version.Version)
+	invCheckPeriod := cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod))
+	iavlCacheSize := cast.ToInt(appOpts.Get(server.FlagIAVLCacheSize))
+	iavlDisableFastNode := cast.ToBool(appOpts.Get(server.FlagDisableIAVLFastNode))
+
+	// option for cosmos sdk
+	baseAppOptions = append(baseAppOptions, baseapp.SetIAVLCacheSize(iavlCacheSize))
+	baseAppOptions = append(baseAppOptions, baseapp.SetIAVLDisableFastNode(iavlDisableFastNode))
+
+	// option for mempool
+	baseAppOptions = append(baseAppOptions, func(app *baseapp.BaseApp) {
+		var mempool *appmempool.FifoMempool
+		if maxTxs := cast.ToInt(appOpts.Get(server.FlagMempoolMaxTxs)); maxTxs > 0 {
+			mempool = appmempool.NewFifoMempool(appmempool.FifoMaxTxOpt(maxTxs))
+		} else {
+			mempool = appmempool.NewFifoMempool()
+		}
+		handler := baseapp.NewDefaultProposalHandler(mempool, app)
+		app.SetMempool(mempool)
+		app.SetTxEncoder(txConfig.TxEncoder())
+		app.SetPrepareProposal(handler.PrepareProposalHandler())
+		app.SetProcessProposal(handler.ProcessProposalHandler())
+	})
+
+	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
+	bApp.SetCommitMultiStoreTracer(traceStore)
 
 	app := &TerraApp{
 		BaseApp:           bApp,
 		legacyAmino:       legacyAmino,
 		appCodec:          appCodec,
 		interfaceRegistry: interfaceRegistry,
+		txConfig:          txConfig,
 		invCheckPeriod:    invCheckPeriod,
 	}
 
@@ -169,8 +230,7 @@ func NewTerraApp(
 	// NOTE: Treasury must occur after bank module so that initial supply is properly set
 	app.mm.SetOrderInitGenesis(orderInitGenesis()...)
 
-	app.mm.RegisterInvariants(&app.CrisisKeeper)
-	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
+	app.mm.RegisterInvariants(app.CrisisKeeper)
 	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
 	app.mm.RegisterServices(app.configurator)
 	app.setupUpgradeHandlers()
@@ -208,12 +268,15 @@ func NewTerraApp(
 			SigGasConsumer:     ante.DefaultSigVerificationGasConsumer,
 			SignModeHandler:    encodingConfig.TxConfig.SignModeHandler(),
 			IBCKeeper:          *app.IBCKeeper,
+			WasmKeeper:         &app.WasmKeeper,
 			DistributionKeeper: app.DistrKeeper,
 			GovKeeper:          app.GovKeeper,
 			WasmConfig:         &wasmConfig,
-			TXCounterStoreKey:  app.GetKey(wasm.StoreKey),
+			TXCounterStoreKey:  app.GetKey(wasmtypes.StoreKey),
 			DyncommKeeper:      app.DyncommKeeper,
 			StakingKeeper:      app.StakingKeeper,
+			TaxKeeper:          &app.TaxKeeper,
+			Cdc:                app.appCodec,
 		},
 	)
 	if err != nil {
@@ -222,7 +285,11 @@ func NewTerraApp(
 
 	postHandler, err := custompost.NewPostHandler(
 		custompost.HandlerOptions{
-			DyncommKeeper: app.DyncommKeeper,
+			DyncommKeeper:  app.DyncommKeeper,
+			TaxKeeper:      app.TaxKeeper,
+			BankKeeper:     app.BankKeeper,
+			AccountKeeper:  app.AccountKeeper,
+			TreasuryKeeper: app.TreasuryKeeper,
 		},
 	)
 	if err != nil {
@@ -232,6 +299,18 @@ func NewTerraApp(
 	app.SetAnteHandler(anteHandler)
 	app.SetPostHandler(postHandler)
 	app.SetEndBlocker(app.EndBlocker)
+
+	// must be before Loading version
+	// requires the snapshot store to be created and registered as a BaseAppOption
+	// see cmd/wasmd/root.go: 206 - 214 approx
+	if manager := app.SnapshotManager(); manager != nil {
+		err := manager.RegisterExtensions(
+			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), &app.WasmKeeper),
+		)
+		if err != nil {
+			panic(fmt.Errorf("failed to register snapshot extension: %s", err))
+		}
+	}
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
@@ -250,6 +329,11 @@ func NewTerraApp(
 
 // Name returns the name of the App
 func (app *TerraApp) Name() string { return app.BaseApp.Name() }
+
+// DefaultGenesis returns a default genesis from the registered AppModuleBasic's.
+func (app *TerraApp) DefaultGenesis() map[string]json.RawMessage {
+	return ModuleBasics.DefaultGenesis(app.appCodec)
+}
 
 // BeginBlocker application updates every begin block
 func (app *TerraApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
@@ -349,12 +433,15 @@ func (app *TerraApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIC
 	if apiConfig.Swagger {
 		RegisterSwaggerAPI(apiSvr.Router)
 	}
+
+	// Apply custom middleware
+	apiSvr.Router.Use(customserver.BlockHeightMiddleware)
 }
 
 // RegisterTxService implements the Application.RegisterTxService method.
 func (app *TerraApp) RegisterTxService(clientCtx client.Context) {
 	authtx.RegisterTxService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.BaseApp.Simulate, app.interfaceRegistry)
-	customauthtx.RegisterTxService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.TreasuryKeeper)
+	customauthtx.RegisterTxService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.TreasuryKeeper, app.TaxKeeper)
 }
 
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
@@ -367,13 +454,16 @@ func (app *TerraApp) RegisterTendermintService(clientCtx client.Context) {
 	)
 }
 
+func (app *TerraApp) RegisterNodeService(clientCtx client.Context) {
+	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter())
+}
+
 // RegisterSwaggerAPI registers swagger route with API Server
 func RegisterSwaggerAPI(rtr *mux.Router) {
-	statikFS, err := fs.New()
+	statikFS, err := fs.NewWithNamespace("terrad")
 	if err != nil {
 		panic(err)
 	}
-
 	staticServer := http.FileServer(statikFS)
 	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
 }
@@ -399,7 +489,8 @@ func (app *TerraApp) setupUpgradeStoreLoaders() {
 
 	for _, upgrade := range Upgrades {
 		if upgradeInfo.Name == upgrade.UpgradeName {
-			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &upgrade.StoreUpgrades))
+			storeUpgrades := upgrade.StoreUpgrades
+			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 		}
 	}
 }
@@ -416,4 +507,9 @@ func (app *TerraApp) setupUpgradeHandlers() {
 			),
 		)
 	}
+}
+
+// GetTxConfig for testing
+func (app *TerraApp) GetTxConfig() client.TxConfig {
+	return app.txConfig
 }

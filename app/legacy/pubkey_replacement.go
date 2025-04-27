@@ -7,9 +7,9 @@ import (
 	"log"
 	"os"
 
+	cryptocodec "github.com/cometbft/cometbft/crypto/encoding"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/pkg/errors"
-	cryptocodec "github.com/tendermint/tendermint/crypto/encoding"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -46,7 +46,6 @@ func loadKeydataFromFile(clientCtx client.Context, replacementrJSON string, genD
 	var replacementKeys replacementConfigs
 
 	err = json.Unmarshal(jsonReplacementBlob, &replacementKeys)
-
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "Could not unmarshal replacement keys "))
 	}
@@ -112,7 +111,6 @@ func loadKeydataFromFile(clientCtx client.Context, replacementrJSON string, genD
 	state[slashing.ModuleName] = clientCtx.Codec.MustMarshalJSON(&slashingGenesis)
 
 	genDoc.AppState, err = json.Marshal(state)
-
 	if err != nil {
 		log.Fatal("Could not marshal App State")
 	}
