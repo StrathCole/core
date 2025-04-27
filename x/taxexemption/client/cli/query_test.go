@@ -67,30 +67,38 @@ func (s *CLITestSuite) TestGetQueryCmd() {
 			// Set the args
 			cmd.SetArgs(tc.args)
 
-			// For help commands, we can check if the output contains expected text
-			if strings.Contains(tc.args[0], "help") || tc.args[len(tc.args)-1] == "--help" {
+			// Handle different test case scenarios
+			switch {
+			case strings.Contains(tc.args[0], "help") || tc.args[len(tc.args)-1] == "--help":
+				// For help commands, check if the output contains expected text
 				cmdStr := fmt.Sprint(cmd)
 				s.Require().Contains(cmdStr, tc.expCmdOutput)
-			} else if tc.expPass {
-				// For other success cases, we'd need to execute the command
+			case tc.expPass:
+				// For success cases, we'd need to execute the command
 				// We skip actual execution since it would need proper setup
 				s.T().Skip("Skipping execution test for success case")
-			} else {
-				// For failure cases, we could check if the validation would fail
-				// But we need to identify which subcommand would be executed
+			default:
+				// For failure cases, check if the validation would fail
 				if len(tc.args) > 0 {
 					for _, subCmd := range cmd.Commands() {
 						if subCmd.Name() == tc.args[0] {
 							// Check argument validation if appropriate
-							if subCmd.Name() == "taxable" && len(tc.args) == 1 {
-								err := subCmd.Args(subCmd, []string{})
-								s.Require().Error(err, "taxable should require args")
-							} else if subCmd.Name() == "addresses" && len(tc.args) == 1 {
-								err := subCmd.Args(subCmd, []string{})
-								s.Require().Error(err, "addresses should require args")
-							} else if subCmd.Name() == "zones" && len(tc.args) > 1 {
-								err := subCmd.Args(subCmd, tc.args[1:])
-								s.Require().Error(err, "zones should not accept args")
+							switch subCmd.Name() {
+							case "taxable":
+								if len(tc.args) == 1 {
+									err := subCmd.Args(subCmd, []string{})
+									s.Require().Error(err, "taxable should require args")
+								}
+							case "addresses":
+								if len(tc.args) == 1 {
+									err := subCmd.Args(subCmd, []string{})
+									s.Require().Error(err, "addresses should require args")
+								}
+							case "zones":
+								if len(tc.args) > 1 {
+									err := subCmd.Args(subCmd, tc.args[1:])
+									s.Require().Error(err, "zones should not accept args")
+								}
 							}
 							break
 						}
