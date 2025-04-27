@@ -24,10 +24,8 @@ var _ types.QueryServer = querier{}
 
 // Taxable queries if a tx from one address to another is taxable
 func (q querier) Taxable(c context.Context, req *types.QueryTaxableRequest) (*types.QueryTaxableResponse, error) {
-
 	if req == nil {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "Request must not nil")
-
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)

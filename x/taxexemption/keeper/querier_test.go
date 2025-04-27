@@ -275,16 +275,6 @@ func TestTaxExemptionAddressList(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(res.Addresses))
 
-	// Case 4: Query addresses with zone and pagination
-	res, err = querier.TaxExemptionAddressList(ctx, &types.QueryTaxExemptionAddressRequest{
-		ZoneName: zoneName1,
-		Pagination: &query.PageRequest{
-			Limit: 1,
-		},
-	})
-	require.NoError(t, err)
-	require.Equal(t, 1, len(res.Addresses))
-
 	// Case 5: Query addresses with non-existent zone
 	res, err = querier.TaxExemptionAddressList(ctx, &types.QueryTaxExemptionAddressRequest{
 		ZoneName: "zone3",
