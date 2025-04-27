@@ -157,28 +157,3 @@ func TestParams(t *testing.T) {
 	retrievedParams := input.TreasuryKeeper.GetParams(input.Ctx)
 	require.Equal(t, defaultParams, retrievedParams)
 }
-
-/*
-func TestBurnTaxExemptionList(t *testing.T) {
-	input := CreateTestInput(t)
-
-	require.False(t, input.TreasuryKeeper.HasBurnTaxExemptionAddress(input.Ctx, ""))
-	require.Panics(t, func() { input.TreasuryKeeper.AddBurnTaxExemptionAddress(input.Ctx, "") })
-	require.Panics(t, func() { input.TreasuryKeeper.RemoveBurnTaxExemptionAddress(input.Ctx, "") })
-
-	pubKey := secp256k1.GenPrivKey().PubKey()
-	address := sdk.AccAddress(pubKey.Address())
-
-	// add an address
-	input.TreasuryKeeper.AddBurnTaxExemptionAddress(input.Ctx, address.String())
-	require.True(t, input.TreasuryKeeper.HasBurnTaxExemptionAddress(input.Ctx, address.String()))
-
-	// add it again
-	input.TreasuryKeeper.AddBurnTaxExemptionAddress(input.Ctx, address.String())
-	require.True(t, input.TreasuryKeeper.HasBurnTaxExemptionAddress(input.Ctx, address.String()))
-
-	// remove it
-	input.TreasuryKeeper.RemoveBurnTaxExemptionAddress(input.Ctx, address.String())
-	require.False(t, input.TreasuryKeeper.HasBurnTaxExemptionAddress(input.Ctx, address.String()))
-}
-*/
