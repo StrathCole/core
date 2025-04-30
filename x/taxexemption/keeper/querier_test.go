@@ -5,6 +5,7 @@ import (
 
 	ultil "github.com/classic-terra/core/v3/x/taxexemption/keeper"
 	"github.com/classic-terra/core/v3/x/taxexemption/types"
+	"github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
 	"github.com/cometbft/cometbft/crypto/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	query "github.com/cosmos/cosmos-sdk/types/query"
@@ -32,14 +33,14 @@ func TestQueryTaxable(t *testing.T) {
 	address7 := sdk.AccAddress(pubKey7.Address())
 
 	// Add a zone
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false})
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone2", Outgoing: false, Incoming: false, CrossZone: true})
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone3", Outgoing: false, Incoming: true, CrossZone: false})
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone4", Outgoing: false, Incoming: true, CrossZone: true})
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone5", Outgoing: true, Incoming: false, CrossZone: false})
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone6", Outgoing: true, Incoming: false, CrossZone: true})
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone7", Outgoing: true, Incoming: true, CrossZone: false})
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone8", Outgoing: true, Incoming: true, CrossZone: true})
+	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false})
+	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone2", Outgoing: false, Incoming: false, CrossZone: true})
+	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone3", Outgoing: false, Incoming: true, CrossZone: false})
+	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone4", Outgoing: false, Incoming: true, CrossZone: true})
+	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone5", Outgoing: true, Incoming: false, CrossZone: false})
+	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone6", Outgoing: true, Incoming: false, CrossZone: true})
+	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone7", Outgoing: true, Incoming: true, CrossZone: false})
+	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone8", Outgoing: true, Incoming: true, CrossZone: true})
 
 	zones := []string{
 		"zone1",
@@ -173,7 +174,7 @@ func TestTaxExemptionZonesList(t *testing.T) {
 	querier := ultil.NewQuerier(input.TaxExemptionKeeper)
 
 	// Create zone tests
-	zones := []types.Zone{
+	zones := []legacy.Zone{
 		{
 			Name:      "zone1",
 			Outgoing:  true,
@@ -245,8 +246,8 @@ func TestTaxExemptionAddressList(t *testing.T) {
 	zoneName1 := "zone1"
 	zoneName2 := "zone2"
 
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: zoneName1, Outgoing: true, Incoming: true, CrossZone: true})
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: zoneName2, Outgoing: false, Incoming: false, CrossZone: false})
+	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: zoneName1, Outgoing: true, Incoming: true, CrossZone: true})
+	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: zoneName2, Outgoing: false, Incoming: false, CrossZone: false})
 
 	input.TaxExemptionKeeper.AddTaxExemptionAddress(input.Ctx, zoneName1, address.String())
 	input.TaxExemptionKeeper.AddTaxExemptionAddress(input.Ctx, zoneName1, address2.String())

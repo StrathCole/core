@@ -13,6 +13,7 @@ import (
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/classic-terra/core/v3/x/taxexemption/types"
+	"github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
 )
 
 // Keeper of the store
@@ -51,72 +52,52 @@ func (k Keeper) GetAuthority() string {
 	return k.authority
 }
 
-func (k Keeper) GetTaxExemptionZone(ctx sdk.Context, zoneName string) (types.Zone, error) {
-	// Ensure the storeKey is properly set up in the Keeper
+func (k Keeper) GetTaxExemptionZone(ctx sdk.Context, zoneName string) (legacy.Zone, error) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.TaxExemptionZonePrefix)
 
 	if zoneName == "" {
-		return types.Zone{}, fmt.Errorf("zone name cannot be empty")
+		return legacy.Zone{}, fmt.Errorf("zone name cannot be empty")
 	}
-	// Convert the zone name to byte slice which will be used as the key
 	key := []byte(zoneName)
 
-	// Check if the zone exists
 	if !store.Has(key) {
-		return types.Zone{}, types.ErrNoSuchTaxExemptionZone.Wrapf("zone = %s", zoneName)
+		return legacy.Zone{}, types.ErrNoSuchTaxExemptionZone.Wrapf("zone = %s", zoneName)
 	}
 
-	// Get the zone
 	bz := store.Get(key)
-
-	// Unmarshal the zone
-	var zone types.Zone
+	var zone legacy.Zone
 	k.cdc.MustUnmarshal(bz, &zone)
 
 	return zone, nil
 }
 
 // Tax exemption zone list
-func (k Keeper) AddTaxExemptionZone(ctx sdk.Context, zone types.Zone) error {
-	// Ensure the storeKey is properly set up in the Keeper
+func (k Keeper) AddTaxExemptionZone(ctx sdk.Context, zone legacy.Zone) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.TaxExemptionZonePrefix)
 
 	if zone.Name == "" {
 		return fmt.Errorf("zone name cannot be empty")
 	}
-	// Convert the zone name to byte slice which will be used as the key
 	key := []byte(zone.Name)
-
-	// Marshal the zone struct to binary format
 	marshaledZone := k.cdc.MustMarshal(&zone)
-
-	// Store the marshaled zone under its name key
 	store.Set(key, marshaledZone)
-
 	return nil
 }
 
-func (k Keeper) ModifyTaxExemptionZone(ctx sdk.Context, zone types.Zone) error {
-	// Ensure the storeKey is properly set up in the Keeper
+func (k Keeper) ModifyTaxExemptionZone(ctx sdk.Context, zone legacy.Zone) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.TaxExemptionZonePrefix)
 
 	if zone.Name == "" {
 		return fmt.Errorf("zone name cannot be empty")
 	}
-	// Convert the zone name to byte slice which will be used as the key
 	key := []byte(zone.Name)
 
-	// Check if the zone exists
 	if !store.Has(key) {
 		return types.ErrNoSuchTaxExemptionZone.Wrapf("zone = %s", zone.Name)
 	}
 
-	// Marshal the zone struct to binary format
 	marshaledZone := k.cdc.MustMarshal(&zone)
-
-	// Store the marshaled zone under its name key
 	store.Set(key, marshaledZone)
-
 	return nil
 }
 
@@ -218,11 +199,7 @@ func (k Keeper) RemoveTaxExemptionAddress(ctx sdk.Context, zone string, address 
 // meets the tax exemption criteria based on their zones
 func (k Keeper) IsExemptedFromTax(ctx sdk.Context, senderAddress string, recipientAddresses ...string) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.TaxExemptionListPrefix)
-
-	// Cache for looked up zones to avoid redundant queries
-	zoneCache := make(map[string]types.Zone)
-
-	// Check and cache the sender's zone
+	zoneCache := make(map[string]legacy.Zone)
 	senderZone, senderHasZone := k.checkAndCacheZone(ctx, store, senderAddress, zoneCache)
 
 	for _, address := range recipientAddresses {
@@ -256,47 +233,37 @@ func (k Keeper) IsExemptedFromTax(ctx sdk.Context, senderAddress string, recipie
 }
 
 // checkAndCacheZone checks and caches the zone of an address
-func (k Keeper) checkAndCacheZone(ctx sdk.Context, store prefix.Store, address string, zoneCache map[string]types.Zone) (types.Zone, bool) {
+func (k Keeper) checkAndCacheZone(ctx sdk.Context, store prefix.Store, address string, zoneCache map[string]legacy.Zone) (legacy.Zone, bool) {
 	if bz := store.Get([]byte(address)); bz != nil {
 		zoneName := string(bz)
-
-		// Cache the zone
 		if zone, ok := zoneCache[zoneName]; ok {
 			return zone, true
 		}
-
 		zone, err := k.GetTaxExemptionZone(ctx, zoneName)
 		if err != nil {
-			return types.Zone{}, false
+			return legacy.Zone{}, false
 		}
-
 		zoneCache[zoneName] = zone
 		return zone, true
 	}
-
-	return types.Zone{}, false
+	return legacy.Zone{}, false
 }
 
-func (k Keeper) ListTaxExemptionZones(c sdk.Context, req *types.QueryTaxExemptionZonesRequest) ([]types.Zone, *query.PageResponse, error) {
+func (k Keeper) ListTaxExemptionZones(c sdk.Context, req *types.QueryTaxExemptionZonesRequest) ([]legacy.Zone, *query.PageResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	sub := prefix.NewStore(ctx.KVStore(k.storeKey), types.TaxExemptionZonePrefix)
-
-	var zones []types.Zone
-
-	// Create a paginated iterator over the store
+	var zones []legacy.Zone
 	pageRes, err := query.FilteredPaginate(sub, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
 		if accumulate {
-			var zone types.Zone
+			var zone legacy.Zone
 			k.cdc.MustUnmarshal(value, &zone)
 			zones = append(zones, zone)
 		}
-
 		return true, nil
 	})
 	if err != nil {
 		return nil, nil, err
 	}
-
 	return zones, pageRes, nil
 }
 

@@ -3,7 +3,7 @@ package v12
 import (
 	"github.com/classic-terra/core/v3/app/keepers"
 	"github.com/classic-terra/core/v3/app/upgrades"
-	taxexemptiontypes "github.com/classic-terra/core/v3/x/taxexemption/types"
+	"github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
 	treasurytypes "github.com/classic-terra/core/v3/x/treasury/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -43,7 +43,7 @@ func CreateV12UpgradeHandler(
 		}
 
 		// add tax exemption address to new tax exemption keeper
-		err = k.TaxExemptionKeeper.AddTaxExemptionZone(c, taxexemptiontypes.Zone{
+		err = k.TaxExemptionKeeper.AddTaxExemptionZone(c, legacy.Zone{
 			Name:      intoZone,
 			Outgoing:  true,
 			Incoming:  true,

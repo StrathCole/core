@@ -7,6 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/classic-terra/core/v3/x/taxexemption/types"
+	"github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
 )
 
 // querier is used as Keeper will have duplicate methods if used directly, and gRPC names take precedence over q
@@ -41,7 +42,7 @@ func (q querier) TaxExemptionZonesList(c context.Context, req *types.QueryTaxExe
 		return nil, err
 	}
 
-	zonePointers := make([]*types.Zone, len(zones))
+	zonePointers := make([]*legacy.Zone, len(zones))
 	for i, zone := range zones {
 		zoneCopy := zone // Make a copy to avoid referencing the loop variable
 		zonePointers[i] = &zoneCopy

@@ -8,6 +8,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/classic-terra/core/v3/x/taxexemption/types"
+	"github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
 )
 
 type msgServer struct {
@@ -28,7 +29,7 @@ func (k msgServer) AddTaxExemptionZone(goCtx context.Context, msg *types.MsgAddT
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	err := k.Keeper.AddTaxExemptionZone(ctx, types.Zone{Name: msg.Zone, Outgoing: msg.Outgoing, Incoming: msg.Incoming, CrossZone: msg.CrossZone})
+	err := k.Keeper.AddTaxExemptionZone(ctx, legacy.Zone{Name: msg.Zone, Outgoing: msg.Outgoing, Incoming: msg.Incoming, CrossZone: msg.CrossZone})
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func (k msgServer) ModifyTaxExemptionZone(goCtx context.Context, msg *types.MsgM
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	err := k.Keeper.ModifyTaxExemptionZone(ctx, types.Zone{Name: msg.Zone, Outgoing: msg.Outgoing, Incoming: msg.Incoming, CrossZone: msg.CrossZone})
+	err := k.Keeper.ModifyTaxExemptionZone(ctx, legacy.Zone{Name: msg.Zone, Outgoing: msg.Outgoing, Incoming: msg.Incoming, CrossZone: msg.CrossZone})
 	if err != nil {
 		return nil, err
 	}

@@ -397,11 +397,11 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 }
 
 var (
-	pattern_Query_Taxable_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"terra", "taxexemption", "v1", "taxable", "from_address", "to_address"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_Taxable_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"terra", "taxexemption", "v1", "taxable", "from_address", "to_address"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_TaxExemptionZonesList_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"terra", "taxexemption", "v1", "zones"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_TaxExemptionZonesList_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"terra", "taxexemption", "legacy", "zones"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_TaxExemptionAddressList_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"terra", "taxexemption", "v1", "zone_name", "addresses"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_TaxExemptionAddressList_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"terra", "taxexemption", "v1", "zone_name", "addresses"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
