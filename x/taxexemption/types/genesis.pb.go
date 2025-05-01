@@ -5,12 +5,12 @@ package types
 
 import (
 	fmt "fmt"
+	"github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
-    "github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -26,7 +26,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // GenesisState defines the taxexemption module's genesis state.
 type GenesisState struct {
-	ZoneList        []legacy.Zone            `protobuf:"bytes,1,rep,name=zone_list,json=zoneList,proto3" json:"zone_list" yaml:"zone_list"`
+	ZoneList        []legacy.Zone     `protobuf:"bytes,1,rep,name=zone_list,json=zoneList,proto3" json:"zone_list" yaml:"zone_list"`
 	AddressesByZone []AddressesByZone `protobuf:"bytes,2,rep,name=addresses_by_zone,json=addressesByZone,proto3" json:"addresses_by_zone" yaml:"addresses_by_zone"`
 }
 
