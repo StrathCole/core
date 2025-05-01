@@ -1,6 +1,7 @@
 package taxexemption_test
 
 import (
+	"slices"
 	"testing"
 
 	taxexemption "github.com/classic-terra/core/v3/x/taxexemption"
@@ -36,6 +37,11 @@ func TestInitAndExportGenesis_NonEmpty(t *testing.T) {
 	input := util.CreateTestInput(t)
 	k := input.TaxExemptionKeeper
 
+	addresses := []string{
+		util.Addrs[0].String(),
+		util.Addrs[1].String(),
+	}
+	slices.Sort(addresses)
 	// Initialize genesis with empty state
 	genesis := taxexemption.DefaultGenesisState()
 	genesis.ZoneList = []legacy.Zone{
@@ -48,11 +54,8 @@ func TestInitAndExportGenesis_NonEmpty(t *testing.T) {
 	}
 	genesis.AddressesByZone = []types.AddressesByZone{
 		{
-			Zone: "test-zone",
-			Addresses: []string{
-				util.Addrs[0].String(),
-				util.Addrs[1].String(),
-			},
+			Zone:      "test-zone",
+			Addresses: addresses,
 		},
 	}
 	require.NotNil(t, genesis)
