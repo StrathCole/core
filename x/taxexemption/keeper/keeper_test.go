@@ -3,6 +3,8 @@ package keeper
 import (
 	"testing"
 
+	"github.com/classic-terra/core/v3/x/taxexemption/types"
+	"github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cometbft/cometbft/crypto/secp256k1"
@@ -10,8 +12,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
-
-	"github.com/classic-terra/core/v3/x/taxexemption/types"
 )
 
 func TestTaxExemptionList(t *testing.T) {
@@ -31,11 +31,13 @@ func TestTaxExemptionList(t *testing.T) {
 	address3 := sdk.AccAddress(pubKey3.Address())
 	address4 := sdk.AccAddress(pubKey4.Address())
 	address5 := sdk.AccAddress(pubKey5.Address())
-
 	// add a zone
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false})
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone2", Outgoing: true, Incoming: false, CrossZone: false})
-	input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, types.Zone{Name: "zone3", Outgoing: false, Incoming: true, CrossZone: true})
+	err := input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false})
+	require.NoError(t, err)
+	err = input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone2", Outgoing: true, Incoming: false, CrossZone: false})
+	require.NoError(t, err)
+	err = input.TaxExemptionKeeper.AddTaxExemptionZone(input.Ctx, legacy.Zone{Name: "zone3", Outgoing: false, Incoming: true, CrossZone: true})
+	require.NoError(t, err)
 
 	// add an address to an invalid zone
 	require.Error(t, input.TaxExemptionKeeper.AddTaxExemptionAddress(input.Ctx, "zone4", address.String()))
@@ -73,7 +75,7 @@ func TestAddTaxExemptionZone(t *testing.T) {
 	input := CreateTestInput(t)
 
 	// Define a test zone
-	testZone := types.Zone{
+	testZone := legacy.Zone{
 		Name:      "test_zone",
 		Outgoing:  true,
 		Incoming:  true,
@@ -93,7 +95,7 @@ func TestAddTaxExemptionZone(t *testing.T) {
 	require.Equal(t, testZone.CrossZone, retrievedZone.CrossZone, "CrossZone flag should match")
 
 	// Test adding another zone
-	anotherZone := types.Zone{
+	anotherZone := legacy.Zone{
 		Name:      "another_zone",
 		Outgoing:  false,
 		Incoming:  true,
@@ -112,7 +114,7 @@ func TestAddTaxExemptionZone(t *testing.T) {
 	require.Equal(t, anotherZone.CrossZone, retrievedZone.CrossZone, "CrossZone flag should match")
 
 	// Test overwriting an existing zone (should not error)
-	modifiedZone := types.Zone{
+	modifiedZone := legacy.Zone{
 		Name:      "test_zone", // Same name as first zone
 		Outgoing:  false,
 		Incoming:  false,
@@ -139,7 +141,7 @@ func TestRemoveTaxExemptionZone(t *testing.T) {
 	address := sdk.AccAddress(pubKey.Address())
 
 	// Define a test zone
-	testZone := types.Zone{
+	testZone := legacy.Zone{
 		Name:      "test_zone",
 		Outgoing:  true,
 		Incoming:  true,
@@ -176,14 +178,14 @@ func TestRemoveTaxExemptionZone(t *testing.T) {
 	require.Contains(t, err.Error(), "no such zone in exemption list", "Error should indicate zone doesn't exist")
 
 	// Add multiple zones
-	zone1 := types.Zone{
+	zone1 := legacy.Zone{
 		Name:      "zone1",
 		Outgoing:  true,
 		Incoming:  false,
 		CrossZone: false,
 	}
 
-	zone2 := types.Zone{
+	zone2 := legacy.Zone{
 		Name:      "zone2",
 		Outgoing:  false,
 		Incoming:  true,
@@ -214,7 +216,7 @@ func TestModifyTaxExemptionZone(t *testing.T) {
 	input := CreateTestInput(t)
 
 	// Define a test zone
-	originalZone := types.Zone{
+	originalZone := legacy.Zone{
 		Name:      "test_zone",
 		Outgoing:  true,
 		Incoming:  false,
@@ -233,7 +235,7 @@ func TestModifyTaxExemptionZone(t *testing.T) {
 	require.Equal(t, originalZone.CrossZone, retrievedZone.CrossZone, "CrossZone flag should match")
 
 	// Modify the zone
-	modifiedZone := types.Zone{
+	modifiedZone := legacy.Zone{
 		Name:      "test_zone", // Same name as original
 		Outgoing:  false,       // Changed
 		Incoming:  true,        // Changed
@@ -251,7 +253,7 @@ func TestModifyTaxExemptionZone(t *testing.T) {
 	require.Equal(t, modifiedZone.CrossZone, retrievedZone.CrossZone, "CrossZone flag should be updated")
 
 	// Try to modify a non-existent zone
-	nonExistentZone := types.Zone{
+	nonExistentZone := legacy.Zone{
 		Name:      "nonexistent_zone",
 		Outgoing:  true,
 		Incoming:  true,
@@ -276,14 +278,14 @@ func TestAddTaxExemptionAddress(t *testing.T) {
 	addr3 := sdk.AccAddress(pubKey3.Address())
 
 	// Define test zones
-	zone1 := types.Zone{
+	zone1 := legacy.Zone{
 		Name:      "zone1",
 		Outgoing:  true,
 		Incoming:  true,
 		CrossZone: false,
 	}
 
-	zone2 := types.Zone{
+	zone2 := legacy.Zone{
 		Name:      "zone2",
 		Outgoing:  false,
 		Incoming:  true,
@@ -364,14 +366,14 @@ func TestRemoveTaxExemptionAddress(t *testing.T) {
 	addr2 := sdk.AccAddress(pubKey2.Address())
 
 	// Define test zones
-	zone1 := types.Zone{
+	zone1 := legacy.Zone{
 		Name:      "zone1",
 		Outgoing:  true,
 		Incoming:  false,
 		CrossZone: false,
 	}
 
-	zone2 := types.Zone{
+	zone2 := legacy.Zone{
 		Name:      "zone2",
 		Outgoing:  false,
 		Incoming:  true,
@@ -435,7 +437,7 @@ func TestGetTaxExemptionZone(t *testing.T) {
 	require.Contains(t, err.Error(), "no such zone in exemption list")
 
 	// Add a test zone
-	testZone := types.Zone{
+	testZone := legacy.Zone{
 		Name:      "test_zone",
 		Outgoing:  true,
 		Incoming:  false,
@@ -457,12 +459,12 @@ func TestGetTaxExemptionZone(t *testing.T) {
 func TestCheckAndCacheZone(t *testing.T) {
 	input := CreateTestInput(t)
 	store := prefix.NewStore(input.Ctx.KVStore(input.TaxExemptionKeeper.storeKey), types.TaxExemptionListPrefix)
-	zoneCache := make(map[string]types.Zone)
+	zoneCache := make(map[string]legacy.Zone)
 
 	// Create test address and zone
 	pubKey := secp256k1.GenPrivKey().PubKey()
 	address := sdk.AccAddress(pubKey.Address())
-	testZone := types.Zone{
+	testZone := legacy.Zone{
 		Name:      "test_zone",
 		Outgoing:  true,
 		Incoming:  false,
@@ -503,7 +505,7 @@ func TestListTaxExemptionAddresses(t *testing.T) {
 	}
 
 	// Create test zones
-	zones := []types.Zone{
+	zones := []legacy.Zone{
 		{
 			Name:      "zone1",
 			Outgoing:  true,
@@ -558,7 +560,7 @@ func TestListTaxExemptionZones(t *testing.T) {
 	input := CreateTestInput(t)
 
 	// Add multiple test zones
-	testZones := []types.Zone{
+	testZones := []legacy.Zone{
 		{
 			Name:      "zone1",
 			Outgoing:  true,
@@ -698,8 +700,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 	// Test cases for zone configurations
 	testCases := []struct {
 		name         string
-		zone1        types.Zone
-		zone2        types.Zone
+		zone1        legacy.Zone
+		zone2        legacy.Zone
 		sender       string
 		recipient    string
 		expectExempt bool
@@ -707,8 +709,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 	}{
 		{
 			name:         "Same Zone - All Flags False",
-			zone1:        types.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false},
-			zone2:        types.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false},
+			zone1:        legacy.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false},
+			zone2:        legacy.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false},
 			sender:       addr1.String(),
 			recipient:    addr2.String(),
 			expectExempt: true, // Same zone always exempt
@@ -716,8 +718,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 		},
 		{
 			name:         "Different Zones - All Flags False",
-			zone1:        types.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false},
-			zone2:        types.Zone{Name: "zone2", Outgoing: false, Incoming: false, CrossZone: false},
+			zone1:        legacy.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false},
+			zone2:        legacy.Zone{Name: "zone2", Outgoing: false, Incoming: false, CrossZone: false},
 			sender:       addr1.String(),
 			recipient:    addr2.String(),
 			expectExempt: false,
@@ -725,8 +727,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 		},
 		{
 			name:         "Sender Zone Only - Outgoing True, CrossZone True",
-			zone1:        types.Zone{Name: "zone1", Outgoing: true, Incoming: false, CrossZone: true},
-			zone2:        types.Zone{Name: "zone2", Outgoing: false, Incoming: false, CrossZone: false},
+			zone1:        legacy.Zone{Name: "zone1", Outgoing: true, Incoming: false, CrossZone: true},
+			zone2:        legacy.Zone{Name: "zone2", Outgoing: false, Incoming: false, CrossZone: false},
 			sender:       addr1.String(),
 			recipient:    addr2.String(),
 			expectExempt: true,
@@ -734,8 +736,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 		},
 		{
 			name:         "Sender Zone Only - Outgoing True, CrossZone True, Recipient Zone Don't Have Zone",
-			zone1:        types.Zone{Name: "zone1", Outgoing: true, Incoming: false, CrossZone: true},
-			zone2:        types.Zone{},
+			zone1:        legacy.Zone{Name: "zone1", Outgoing: true, Incoming: false, CrossZone: true},
+			zone2:        legacy.Zone{},
 			sender:       addr1.String(),
 			recipient:    addr2.String(),
 			expectExempt: true,
@@ -743,8 +745,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 		},
 		{
 			name:         "Recipient Zone Only - Incoming True, Sender Zone Outgoing False",
-			zone1:        types.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: true},
-			zone2:        types.Zone{Name: "zone2", Outgoing: false, Incoming: true, CrossZone: true},
+			zone1:        legacy.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: true},
+			zone2:        legacy.Zone{Name: "zone2", Outgoing: false, Incoming: true, CrossZone: true},
 			sender:       addr1.String(),
 			recipient:    addr2.String(),
 			expectExempt: true,
@@ -752,8 +754,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 		},
 		{
 			name:         "Recipient Zone Only - Incoming True, Sender Zone Outgoing True, CrossZone False",
-			zone1:        types.Zone{Name: "zone1", Outgoing: true, Incoming: false, CrossZone: false},
-			zone2:        types.Zone{Name: "zone2", Outgoing: false, Incoming: true, CrossZone: true},
+			zone1:        legacy.Zone{Name: "zone1", Outgoing: true, Incoming: false, CrossZone: false},
+			zone2:        legacy.Zone{Name: "zone2", Outgoing: false, Incoming: true, CrossZone: true},
 			sender:       addr1.String(),
 			recipient:    addr2.String(),
 			expectExempt: true,
@@ -761,8 +763,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 		},
 		{
 			name:         "Recipient Zone Only - Incoming True CrossZone True, Sender Zone Don't Have Zone",
-			zone1:        types.Zone{},
-			zone2:        types.Zone{Name: "zone2", Outgoing: false, Incoming: true, CrossZone: true},
+			zone1:        legacy.Zone{},
+			zone2:        legacy.Zone{Name: "zone2", Outgoing: false, Incoming: true, CrossZone: true},
 			sender:       addr1.String(),
 			recipient:    addr2.String(),
 			expectExempt: true,
@@ -770,8 +772,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 		},
 		{
 			name:         "Cross-Zone - Sender Outgoing & CrossZone True",
-			zone1:        types.Zone{Name: "zone1", Outgoing: true, Incoming: false, CrossZone: true},
-			zone2:        types.Zone{Name: "zone2", Outgoing: false, Incoming: false, CrossZone: false},
+			zone1:        legacy.Zone{Name: "zone1", Outgoing: true, Incoming: false, CrossZone: true},
+			zone2:        legacy.Zone{Name: "zone2", Outgoing: false, Incoming: false, CrossZone: false},
 			sender:       addr1.String(),
 			recipient:    addr2.String(),
 			expectExempt: true,
@@ -779,8 +781,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 		},
 		{
 			name:         "Cross-Zone - Recipient Incoming & CrossZone True",
-			zone1:        types.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false},
-			zone2:        types.Zone{Name: "zone2", Outgoing: false, Incoming: true, CrossZone: true},
+			zone1:        legacy.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: false},
+			zone2:        legacy.Zone{Name: "zone2", Outgoing: false, Incoming: true, CrossZone: true},
 			sender:       addr1.String(),
 			recipient:    addr2.String(),
 			expectExempt: true,
@@ -788,8 +790,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 		},
 		{
 			name:         "Cross-Zone - Both Zones CrossZone True but No Incoming/Outgoing",
-			zone1:        types.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: true},
-			zone2:        types.Zone{Name: "zone2", Outgoing: false, Incoming: false, CrossZone: true},
+			zone1:        legacy.Zone{Name: "zone1", Outgoing: false, Incoming: false, CrossZone: true},
+			zone2:        legacy.Zone{Name: "zone2", Outgoing: false, Incoming: false, CrossZone: true},
 			sender:       addr1.String(),
 			recipient:    addr2.String(),
 			expectExempt: false,
@@ -797,8 +799,8 @@ func TestIsExemptedFromTaxAllCases(t *testing.T) {
 		},
 		{
 			name:         "No Zones - Both Addresses",
-			zone1:        types.Zone{},
-			zone2:        types.Zone{},
+			zone1:        legacy.Zone{},
+			zone2:        legacy.Zone{},
 			sender:       addr3.String(),
 			recipient:    addr3.String(),
 			expectExempt: false,

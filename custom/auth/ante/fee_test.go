@@ -23,7 +23,7 @@ import (
 	oracletypes "github.com/classic-terra/core/v3/x/oracle/types"
 	"github.com/classic-terra/core/v3/x/tax/post"
 	taxtypes "github.com/classic-terra/core/v3/x/tax/types"
-	"github.com/classic-terra/core/v3/x/taxexemption/types"
+	"github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
 )
 
 func (s *AnteTestSuite) TestDeductFeeDecorator_ZeroGas() {
@@ -523,12 +523,12 @@ func (s *AnteTestSuite) TestTaxExemption() {
 	var privs []cryptotypes.PrivKey
 	var addrs []sdk.AccAddress
 
-	zoneNone := types.Zone{}
-	zoneInternal := types.Zone{Name: "Internal", Outgoing: false, Incoming: false, CrossZone: false}
-	zoneOutgoing := types.Zone{Name: "Outgoing", Outgoing: true, Incoming: false, CrossZone: false}
-	zoneIncoming := types.Zone{Name: "Incoming", Outgoing: false, Incoming: true, CrossZone: false}
-	zoneCrossZoneOutgoing := types.Zone{Name: "CrossOutgoing", Outgoing: true, Incoming: false, CrossZone: true}
-	zoneCrossZoneIncoming := types.Zone{Name: "CrossIncoming", Outgoing: false, Incoming: true, CrossZone: true}
+	zoneNone := legacy.Zone{}
+	zoneInternal := legacy.Zone{Name: "Internal", Outgoing: false, Incoming: false, CrossZone: false}
+	zoneOutgoing := legacy.Zone{Name: "Outgoing", Outgoing: true, Incoming: false, CrossZone: false}
+	zoneIncoming := legacy.Zone{Name: "Incoming", Outgoing: false, Incoming: true, CrossZone: false}
+	zoneCrossZoneOutgoing := legacy.Zone{Name: "CrossOutgoing", Outgoing: true, Incoming: false, CrossZone: true}
+	zoneCrossZoneIncoming := legacy.Zone{Name: "CrossIncoming", Outgoing: false, Incoming: true, CrossZone: true}
 
 	// 0, 1: exemption
 	// 2, 3: normal
@@ -549,8 +549,8 @@ func (s *AnteTestSuite) TestTaxExemption() {
 		msgCreator          func() []sdk.Msg
 		minFeeAmount        int64
 		expectProceeds      int64
-		zoneA               types.Zone
-		zoneB               types.Zone
+		zoneA               legacy.Zone
+		zoneB               legacy.Zone
 		expectReverseCharge bool
 	}{
 		{
@@ -1033,8 +1033,8 @@ func (s *AnteTestSuite) TestTaxExemptionWithMultipleDenoms() {
 	var privs []cryptotypes.PrivKey
 	var addrs []sdk.AccAddress
 
-	zoneNone := types.Zone{}
-	zoneInternal := types.Zone{Name: "Internal", Outgoing: false, Incoming: false, CrossZone: false}
+	zoneNone := legacy.Zone{}
+	zoneInternal := legacy.Zone{Name: "Internal", Outgoing: false, Incoming: false, CrossZone: false}
 	// zoneOutgoing := types.Zone{Name: "Outgoing", Outgoing: true, Incoming: false, CrossZone: false}
 	// zoneIncoming := types.Zone{Name: "Incoming", Outgoing: false, Incoming: true, CrossZone: false}
 	// zoneCrossZoneOutgoing := types.Zone{Name: "CrossOutgoing", Outgoing: true, Incoming: false, CrossZone: true}
@@ -1063,8 +1063,8 @@ func (s *AnteTestSuite) TestTaxExemptionWithMultipleDenoms() {
 		msgCreator          func() []sdk.Msg
 		minFeeAmounts       []sdk.Coin
 		expectProceeds      sdk.Coins
-		zoneA               types.Zone
-		zoneB               types.Zone
+		zoneA               legacy.Zone
+		zoneB               legacy.Zone
 		expectReverseCharge bool
 	}{
 		{

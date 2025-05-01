@@ -1,7 +1,7 @@
-package types
+package legacy
 
 import (
-	fmt "fmt"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -14,6 +14,7 @@ const (
 	ProposalTypeModifyTaxExemptionZone    = "ModifyTaxExemptionZone"
 	ProposalTypeAddTaxExemptionAddress    = "AddTaxExemptionAddress"
 	ProposalTypeRemoveTaxExemptionAddress = "RemoveTaxExemptionAddress"
+	RouterKey                             = "taxexemption"
 )
 
 func init() {
@@ -24,21 +25,11 @@ func init() {
 	govv1beta1.RegisterProposalType(ProposalTypeRemoveTaxExemptionAddress)
 }
 
-var (
-	_ govv1beta1.Content = &AddTaxExemptionZoneProposal{}
-	_ govv1beta1.Content = &RemoveTaxExemptionZoneProposal{}
-	_ govv1beta1.Content = &ModifyTaxExemptionZoneProposal{}
-	_ govv1beta1.Content = &AddTaxExemptionAddressProposal{}
-	_ govv1beta1.Content = &RemoveTaxExemptionAddressProposal{}
-)
-
 // ======AddTaxExemptionZoneProposal======
 
 func (p *AddTaxExemptionZoneProposal) GetTitle() string { return p.Title }
 
 func (p *AddTaxExemptionZoneProposal) GetDescription() string { return p.Description }
-
-func (p *AddTaxExemptionZoneProposal) GetZone() string { return p.Zone }
 
 func (p *AddTaxExemptionZoneProposal) ProposalRoute() string { return RouterKey }
 
@@ -46,7 +37,7 @@ func (p *AddTaxExemptionZoneProposal) ProposalType() string {
 	return ProposalTypeAddTaxExemptionZone
 }
 
-func (p AddTaxExemptionZoneProposal) String() string {
+func (p *AddTaxExemptionZoneProposal) String() string {
 	return fmt.Sprintf(`AddTaxExemptionZoneProposal:
 	Title:       %s
 	Description: %s
@@ -54,7 +45,9 @@ func (p AddTaxExemptionZoneProposal) String() string {
 	Outgoing:    %t
 	Incoming:    %t
 	CrossZone:   %t
-  `, p.Title, p.Description, p.Zone, p.Outgoing, p.Incoming, p.CrossZone)
+	Addresses:   %v
+	Authority:   %s
+  `, p.Title, p.Description, p.Zone, p.Outgoing, p.Incoming, p.CrossZone, p.Addresses, p.Authority)
 }
 
 func (p *AddTaxExemptionZoneProposal) ValidateBasic() error {
@@ -83,20 +76,19 @@ func (p *RemoveTaxExemptionZoneProposal) GetTitle() string { return p.Title }
 
 func (p *RemoveTaxExemptionZoneProposal) GetDescription() string { return p.Description }
 
-func (p *RemoveTaxExemptionZoneProposal) GetZone() string { return p.Zone }
-
 func (p *RemoveTaxExemptionZoneProposal) ProposalRoute() string { return RouterKey }
 
 func (p *RemoveTaxExemptionZoneProposal) ProposalType() string {
 	return ProposalTypeRemoveTaxExemptionZone
 }
 
-func (p RemoveTaxExemptionZoneProposal) String() string {
+func (p *RemoveTaxExemptionZoneProposal) String() string {
 	return fmt.Sprintf(`RemoveTaxExemptionZoneProposal:
 	Title:       %s
 	Description: %s
 	Zone: 	  	 %s
-  `, p.Title, p.Description, p.Zone)
+	Authority:   %s
+  `, p.Title, p.Description, p.Zone, p.Authority)
 }
 
 func (p *RemoveTaxExemptionZoneProposal) ValidateBasic() error {
@@ -118,15 +110,13 @@ func (p *ModifyTaxExemptionZoneProposal) GetTitle() string { return p.Title }
 
 func (p *ModifyTaxExemptionZoneProposal) GetDescription() string { return p.Description }
 
-func (p *ModifyTaxExemptionZoneProposal) GetZone() string { return p.Zone }
-
 func (p *ModifyTaxExemptionZoneProposal) ProposalRoute() string { return RouterKey }
 
 func (p *ModifyTaxExemptionZoneProposal) ProposalType() string {
 	return ProposalTypeModifyTaxExemptionZone
 }
 
-func (p ModifyTaxExemptionZoneProposal) String() string {
+func (p *ModifyTaxExemptionZoneProposal) String() string {
 	return fmt.Sprintf(`ModifyTaxExemptionZoneProposal:
 	Title:       %s
 	Description: %s
@@ -134,7 +124,8 @@ func (p ModifyTaxExemptionZoneProposal) String() string {
 	Outgoing:    %t
 	Incoming:    %t
 	CrossZone:   %t
-  `, p.Title, p.Description, p.Zone, p.Outgoing, p.Incoming, p.CrossZone)
+	Authority:   %s
+  `, p.Title, p.Description, p.Zone, p.Outgoing, p.Incoming, p.CrossZone, p.Authority)
 }
 
 func (p *ModifyTaxExemptionZoneProposal) ValidateBasic() error {
@@ -156,21 +147,20 @@ func (p *AddTaxExemptionAddressProposal) GetTitle() string { return p.Title }
 
 func (p *AddTaxExemptionAddressProposal) GetDescription() string { return p.Description }
 
-func (p *AddTaxExemptionAddressProposal) GetZone() string { return p.Zone }
-
 func (p *AddTaxExemptionAddressProposal) ProposalRoute() string { return RouterKey }
 
 func (p *AddTaxExemptionAddressProposal) ProposalType() string {
 	return ProposalTypeAddTaxExemptionAddress
 }
 
-func (p AddTaxExemptionAddressProposal) String() string {
+func (p *AddTaxExemptionAddressProposal) String() string {
 	return fmt.Sprintf(`AddTaxExemptionAddressProposal:
 	Title:       %s
 	Description: %s
 	Zone: 	  	 %s
 	Addresses:   %v
-  `, p.Title, p.Description, p.Zone, p.Addresses)
+	Authority:   %s
+  `, p.Title, p.Description, p.Zone, p.Addresses, p.Authority)
 }
 
 func (p *AddTaxExemptionAddressProposal) ValidateBasic() error {
@@ -195,20 +185,20 @@ func (p *RemoveTaxExemptionAddressProposal) GetTitle() string { return p.Title }
 
 func (p *RemoveTaxExemptionAddressProposal) GetDescription() string { return p.Description }
 
-func (p *RemoveTaxExemptionAddressProposal) GetZone() string { return p.Zone }
-
 func (p *RemoveTaxExemptionAddressProposal) ProposalRoute() string { return RouterKey }
 
 func (p *RemoveTaxExemptionAddressProposal) ProposalType() string {
 	return ProposalTypeRemoveTaxExemptionAddress
 }
 
-func (p RemoveTaxExemptionAddressProposal) String() string {
+func (p *RemoveTaxExemptionAddressProposal) String() string {
 	return fmt.Sprintf(`RemoveTaxExemptionAddressProposal:
 	Title:       %s
 	Description: %s
+	Zone: 	  	 %s
 	Addresses:   %v
-  `, p.Title, p.Description, p.Addresses)
+	Authority:   %s
+  `, p.Title, p.Description, p.Zone, p.Addresses, p.Authority)
 }
 
 func (p *RemoveTaxExemptionAddressProposal) ValidateBasic() error {
