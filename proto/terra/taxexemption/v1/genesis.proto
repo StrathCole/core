@@ -8,7 +8,7 @@ option go_package = "github.com/classic-terra/core/v3/x/taxexemption/types";
 
 // GenesisState defines the taxexemption module's genesis state.
 message GenesisState {
-    repeated Zone zone_list = 1 [
+    repeated terra.taxexemption.legacy.Zone zone_list = 1 [
         (gogoproto.moretags) = "yaml:\"zone_list\"",
         (gogoproto.nullable)   = false
     ];
