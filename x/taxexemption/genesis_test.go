@@ -7,7 +7,6 @@ import (
 	util "github.com/classic-terra/core/v3/x/taxexemption/keeper"
 	"github.com/classic-terra/core/v3/x/taxexemption/types"
 	legacy "github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,16 +19,15 @@ func TestInitAndExportGenesis_Empty(t *testing.T) {
 	// Setup mock context & keeper (simple zero value for now)
 	input := util.CreateTestInput(t)
 	k := input.TaxExemptionKeeper
-	ctx := sdk.Context{}
 
 	// Initialize genesis with empty state
 	genesis := taxexemption.DefaultGenesisState()
 	require.NotNil(t, genesis)
 
-	taxexemption.InitGenesis(ctx, k, genesis)
+	taxexemption.InitGenesis(input.Ctx, k, genesis)
 
 	// Export genesis and check that it's not nil and matches default state
-	exported := taxexemption.ExportGenesis(ctx, k)
+	exported := taxexemption.ExportGenesis(input.Ctx, k)
 	require.NotNil(t, exported)
 }
 
