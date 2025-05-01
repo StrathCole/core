@@ -322,3 +322,11 @@ func (k Keeper) ListTaxExemptionAddresses(c sdk.Context, req *types.QueryTaxExem
 
 	return addresses, pageRes, nil
 }
+
+func (k Keeper) StoreKey() storetypes.StoreKey {
+	return k.storeKey
+}
+
+func (k Keeper) Codec() codec.BinaryCodec {
+	return k.cdc
+}
