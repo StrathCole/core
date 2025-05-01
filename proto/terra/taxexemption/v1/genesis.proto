@@ -2,7 +2,7 @@ syntax = "proto3";
 package terra.taxexemption.v1;
 
 import "gogoproto/gogo.proto";
-import "terra/taxexemption/v1/legacy/taxexemption.proto";
+import "terra/taxexemption/legacy/taxexemption.proto";
 
 option go_package = "github.com/classic-terra/core/v3/x/taxexemption/types";
 
