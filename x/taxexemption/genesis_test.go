@@ -6,6 +6,7 @@ import (
 	taxexemption "github.com/classic-terra/core/v3/x/taxexemption"
 	util "github.com/classic-terra/core/v3/x/taxexemption/keeper"
 	"github.com/classic-terra/core/v3/x/taxexemption/types"
+	legacy "github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 )
@@ -39,7 +40,7 @@ func TestInitAndExportGenesis_NonEmpty(t *testing.T) {
 
 	// Initialize genesis with empty state
 	genesis := taxexemption.DefaultGenesisState()
-	genesis.ZoneList = []types.Zone{
+	genesis.ZoneList = []legacy.Zone{
 		{
 			Name:      "test-zone",
 			Incoming:  true,
@@ -70,7 +71,7 @@ func TestInitAndExportGenesis_NonEmpty(t *testing.T) {
 func TestValidateGenesis_Success(t *testing.T) {
 	// Initialize genesis with empty state
 	genesis := taxexemption.DefaultGenesisState()
-	genesis.ZoneList = []types.Zone{
+	genesis.ZoneList = []legacy.Zone{
 		{
 			Name:      "test-zone",
 			Incoming:  true,
@@ -96,7 +97,7 @@ func TestValidateGenesis_Success(t *testing.T) {
 func TestValidateGenesis_Failure(t *testing.T) {
 	// Case 1: Zone length mismatch
 	genesis := taxexemption.DefaultGenesisState()
-	genesis.ZoneList = []types.Zone{
+	genesis.ZoneList = []legacy.Zone{
 		{
 			Name:      "test-zone",
 			Incoming:  true,
@@ -111,7 +112,7 @@ func TestValidateGenesis_Failure(t *testing.T) {
 
 	// Case 2: Invalid address
 	genesis = taxexemption.DefaultGenesisState()
-	genesis.ZoneList = []types.Zone{
+	genesis.ZoneList = []legacy.Zone{
 		{
 			Name:      "test-zone",
 			Incoming:  true,
@@ -133,7 +134,7 @@ func TestValidateGenesis_Failure(t *testing.T) {
 
 	// Case 3: Zone not exist
 	genesis = taxexemption.DefaultGenesisState()
-	genesis.ZoneList = []types.Zone{
+	genesis.ZoneList = []legacy.Zone{
 		{
 			Name:      "test-zone",
 			Incoming:  true,

@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/classic-terra/core/v3/x/taxexemption/keeper"
 	"github.com/classic-terra/core/v3/x/taxexemption/types"
+	legacy "github.com/classic-terra/core/v3/x/taxexemption/types/legacy"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // DefaultGenesisState gets raw genesis raw message for testing
 func DefaultGenesisState() *types.GenesisState {
 	return &types.GenesisState{
-		ZoneList:        []types.Zone{},
+		ZoneList:        []legacy.Zone{},
 		AddressesByZone: []types.AddressesByZone{},
 	}
 }
@@ -69,12 +69,12 @@ func ExportGenesis(ctx sdk.Context, keeper keeper.Keeper) (data *types.GenesisSt
 	iterator := zonePrefix.Iterator(nil, nil)
 	defer iterator.Close()
 
-	var zones []types.Zone
+	var zones []legacy.Zone
 	var zoneAddresses = make(map[string][]string)
 	var addresesByZone []types.AddressesByZone
 
 	for ; iterator.Valid(); iterator.Next() {
-		var zone types.Zone
+		var zone legacy.Zone
 		keeper.Codec().MustUnmarshal(iterator.Value(), &zone)
 		zones = append(zones, zone)
 		zoneAddresses[zone.Name] = []string{}
