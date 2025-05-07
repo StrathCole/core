@@ -134,13 +134,6 @@ func (s *UpgradeTestSuite) TestMigrateWasmKeys() {
 
 // createMockWasmKeeper creates a mock wasm keeper with the given store key
 func createMockWasmKeeper(storeKey storetypes.StoreKey) wasmkeeper.Keeper {
-	// Create a minimal mock keeper that has the store key
-	// We only need the storeKey field to be set for the migration to work
-
-	// Create a mock keeper using reflection to set just the storeKey field
-	// This is a hack, but it's the simplest way to create a mock keeper for testing
-	// without having to provide all the dependencies
-
 	// Create an empty keeper
 	keeper := wasmkeeper.Keeper{}
 
@@ -405,10 +398,6 @@ func (s *UpgradeTestSuite) TestMigrateContractStoreKeys() {
 	unprefixedDirectAddr := bytes.Repeat([]byte{0xDD}, 20)
 	newDirectPrefixedKey := append(append([]byte{0x03}, unprefixedDirectAddr...), []byte{0x01}...)
 
-	// Print debug information before the failing check
-	fmt.Printf("Original key: %X\n", directPrefixedKey)
-	fmt.Printf("Expected new key: %X\n", newDirectPrefixedKey)
-	fmt.Printf("All store keys:\n")
 	iter := kvStore.Iterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {

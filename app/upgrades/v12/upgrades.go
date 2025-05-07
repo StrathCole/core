@@ -35,7 +35,6 @@ func CreateV12UpgradeHandler(
 func migrateWasmKeys(ctx sdk.Context, wasmKeeper wasmkeeper.Keeper, wasmStoreKey storetypes.StoreKey) error {
 	store := ctx.KVStore(wasmStoreKey)
 
-	// Log the migration start
 	ctx.Logger().Info("Starting WASM key migration from forked to original format")
 
 	// First, collect all contract addresses before any migration
@@ -54,7 +53,6 @@ func migrateWasmKeys(ctx sdk.Context, wasmKeeper wasmkeeper.Keeper, wasmStoreKey
 	oldInstanceIDKey := []byte{0x02}
 	oldInstanceIDValue := store.Get(oldInstanceIDKey)
 
-	// Log sequence values for debugging
 	if oldCodeIDValue != nil {
 		ctx.Logger().Info(fmt.Sprintf("Found code ID sequence: %v", oldCodeIDValue))
 	} else {
@@ -89,7 +87,6 @@ func migrateWasmKeys(ctx sdk.Context, wasmKeeper wasmkeeper.Keeper, wasmStoreKey
 	if codeIDValue != nil {
 		newCodeIDKey := append([]byte{0x04}, []byte("lastCodeId")...)
 		store.Set(newCodeIDKey, codeIDValue)
-		// Log before deleting
 		ctx.Logger().Info(fmt.Sprintf("Migrated code ID sequence from 0x01 to %X", newCodeIDKey))
 		store.Delete(oldCodeIDKey)
 	}
@@ -97,7 +94,6 @@ func migrateWasmKeys(ctx sdk.Context, wasmKeeper wasmkeeper.Keeper, wasmStoreKey
 	if instanceIDValue != nil {
 		newInstanceIDKey := append([]byte{0x04}, []byte("lastContractId")...)
 		store.Set(newInstanceIDKey, instanceIDValue)
-		// Log before deleting
 		ctx.Logger().Info(fmt.Sprintf("Migrated instance ID sequence from 0x02 to %X", newInstanceIDKey))
 		store.Delete(oldInstanceIDKey)
 	}
@@ -145,7 +141,6 @@ func migrateCodeKeys(store sdk.KVStore) error {
 }
 
 // removeLengthPrefixIfNeeded checks if a key has a length prefix and removes it if present
-// Length prefixed addresses have their first byte indicating the length of the address
 func removeLengthPrefixIfNeeded(bz []byte) []byte {
 	if len(bz) == 0 {
 		return bz
@@ -420,32 +415,27 @@ func collectContractAddresses(store sdk.KVStore) [][]byte {
 	return contractAddresses
 }
 
-// MigrateWasmKeys handles the migration of wasm keys from forked to original format
-// Exported for testing
+// MigrateWasmKeys Exported for testing
 func MigrateWasmKeys(ctx sdk.Context, wasmKeeper wasmkeeper.Keeper, wasmStoreKey storetypes.StoreKey) error {
 	return migrateWasmKeys(ctx, wasmKeeper, wasmStoreKey)
 }
 
-// RemoveLengthPrefixIfNeeded checks if a key has a length prefix and removes it if present
-// Exported for testing
+// RemoveLengthPrefixIfNeeded Exported for testing
 func RemoveLengthPrefixIfNeeded(bz []byte) []byte {
 	return removeLengthPrefixIfNeeded(bz)
 }
 
-// CollectContractAddresses gets all contract addresses before any migration
-// Exported for testing
+// CollectContractAddresses Exported for testing
 func CollectContractAddresses(store sdk.KVStore) [][]byte {
 	return collectContractAddresses(store)
 }
 
-// MigrateContractStoreKeys migrates contract store keys from 0x05 to 0x03
-// Exported for testing
+// MigrateContractStoreKeys Exported for testing
 func MigrateContractStoreKeys(store sdk.KVStore, contractAddresses [][]byte) error {
 	return migrateContractStoreKeys(store, contractAddresses)
 }
 
-// MigrateContractKeys migrates contract keys from 0x04 to 0x02
-// Exported for testing
+// MigrateContractKeys Exported for testing
 func MigrateContractKeys(store sdk.KVStore) error {
 	return migrateContractKeys(store)
 }
