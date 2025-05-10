@@ -70,7 +70,7 @@ func ExportGenesis(ctx sdk.Context, keeper keeper.Keeper) (data *types.GenesisSt
 	defer iterator.Close()
 
 	var zones []types.Zone
-	var zoneAddresses = make(map[string][]string)
+	zoneAddresses := make(map[string][]string)
 	var addresesByZone []types.AddressesByZone
 
 	for ; iterator.Valid(); iterator.Next() {
