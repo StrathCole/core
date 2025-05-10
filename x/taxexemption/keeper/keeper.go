@@ -308,11 +308,10 @@ func (k Keeper) ListTaxExemptionAddresses(c sdk.Context, req *types.QueryTaxExem
 
 	// Create an iterator over the store
 	pageRes, err := query.FilteredPaginate(sub, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
-		if accumulate {
-			zoneName := string(value)
-			if req.ZoneName == "" || zoneName == req.ZoneName {
-				addresses = append(addresses, string(key))
-			}
+		if req.ZoneName == "" && accumulate {
+			addresses = append(addresses, string(key))
+		} else if string(value) == req.ZoneName {
+			addresses = append(addresses, string(key))
 		}
 		return true, nil
 	})

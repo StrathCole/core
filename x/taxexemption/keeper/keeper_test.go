@@ -544,8 +544,10 @@ func TestListTaxExemptionAddresses(t *testing.T) {
 
 	// Test listing addresses for specific zone
 	req = &types.QueryTaxExemptionAddressRequest{
-		ZoneName:   zones[0].Name,
-		Pagination: nil,
+		ZoneName: zones[0].Name,
+		Pagination: &sdkquery.PageRequest{
+			Limit: 2,
+		},
 	}
 	listedAddresses, pageRes, err = input.TaxExemptionKeeper.ListTaxExemptionAddresses(input.Ctx, req)
 	require.NoError(t, err)
