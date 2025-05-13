@@ -3,6 +3,7 @@ package taxexemption
 import (
 	"fmt"
 	"slices"
+	"sort"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -91,12 +92,20 @@ func ExportGenesis(ctx sdk.Context, keeper keeper.Keeper) (data *types.GenesisSt
 		}
 	}
 
-	for zoneName, addresses := range zoneAddresses {
+	var zoneNames []string
+	for zoneName := range zoneAddresses {
+		zoneNames = append(zoneNames, zoneName)
+	}
+	sort.Strings(zoneNames)
+
+	for _, zoneName := range zoneNames {
+		addresses := zoneAddresses[zoneName]
 		addresesByZone = append(addresesByZone, types.AddressesByZone{
 			Zone:      zoneName,
 			Addresses: addresses,
 		})
 	}
+
 	state := &types.GenesisState{
 		ZoneList:        zones,
 		AddressesByZone: addresesByZone,
