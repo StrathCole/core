@@ -3,6 +3,7 @@ package taxexemption
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/classic-terra/core/v3/x/market/simulation"
 	"github.com/classic-terra/core/v3/x/taxexemption/client/cli"
@@ -68,12 +69,17 @@ func (b AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry
 // DefaultGenesis returns default genesis state as raw bytes for the taxexemption
 // module.
 func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
-	return cdc.MustMarshalJSON(types.DefaultGenesisState())
+	return cdc.MustMarshalJSON(DefaultGenesisState())
 }
 
 // ValidateGenesis performs genesis state validation for the taxexemption module.
-func (AppModuleBasic) ValidateGenesis(codec.JSONCodec, client.TxEncodingConfig, json.RawMessage) error {
-	return nil
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingConfig, bz json.RawMessage) error {
+	var data types.GenesisState
+	if err := cdc.UnmarshalJSON(bz, &data); err != nil {
+		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
+	}
+
+	return ValidateGenesis(&data)
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the taxexemption module.
@@ -104,9 +110,9 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 // InitGenesis performs genesis initialization for the taxexemption module. It returns
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
-	/*var genesisState types.GenesisState
+	var genesisState types.GenesisState
 	cdc.MustUnmarshalJSON(data, &genesisState)
-	InitGenesis(ctx, am.keeper, &genesisState)*/
+	InitGenesis(ctx, am.keeper, &genesisState)
 
 	return nil
 }
