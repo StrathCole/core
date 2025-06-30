@@ -3,7 +3,7 @@
   "info": {
     "title": "Terra Classic - gRPC Gateway docs",
     "description": "REST interface for Terra Classic https://github.com/classic-terra/core",
-    "version": "2.2.0"
+    "version": "2.2.1"
   },
   "apis": [
     {
@@ -138,7 +138,7 @@
       }
     },
     {
-      "url": "./tmp-swagger-gen/terra/taxexemption/v1beta1/query.swagger.json",
+      "url": "./tmp-swagger-gen/terra/taxexemption/v1/query.swagger.json",
       "operationIds": {
         "rename": {
           "Params": "TaxExemptionParams"

@@ -2,7 +2,7 @@ swagger: '2.0'
 info:
   title: Terra Classic - gRPC Gateway docs
   description: REST interface for Terra Classic https://github.com/classic-terra/core
-  version: 2.2.0
+  version: 2.2.1
 paths:
   /cosmos/auth/v1beta1/account_info/{address}:
     get:
@@ -28495,7 +28495,51 @@ paths:
                       format: byte
       tags:
         - Query
-  /terra/taxexemption/v1beta1/zones:
+  /terra/taxexemption/v1/taxable/{from_address}/{to_address}:
+    get:
+      operationId: Taxable
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              taxable:
+                type: boolean
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: from_address
+          in: path
+          required: true
+          type: string
+        - name: to_address
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /terra/taxexemption/v1/zones:
     get:
       operationId: TaxExemptionZonesList
       responses:
@@ -28626,7 +28670,7 @@ paths:
           type: boolean
       tags:
         - Query
-  /terra/taxexemption/v1beta1/{zone_name}/addresses:
+  /terra/taxexemption/v1/{zone_name}/addresses:
     get:
       operationId: TaxExemptionAddressList
       responses:
@@ -28750,45 +28794,6 @@ paths:
           in: query
           required: false
           type: boolean
-      tags:
-        - Query
-  /terra/tax/v1beta1/burn_tax_rate:
-    get:
-      summary: BurnTaxRate return the current tax rate
-      operationId: BurnTaxRate
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              tax_rate:
-                type: string
-            description: |-
-              QueryBurnTaxRateResponse is response type for the
-              Query/BurnTaxRate RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
       tags:
         - Query
   /terra/dyncomm/v1beta1/params:
@@ -64119,7 +64124,7 @@ definitions:
     description: |-
       QueryTaxRateResponse is response type for the
       Query/TaxRate RPC method.
-  terra.taxexemption.v1beta1.QueryTaxExemptionAddressResponse:
+  terra.taxexemption.v1.QueryTaxExemptionAddressResponse:
     type: object
     properties:
       addresses:
@@ -64152,7 +64157,7 @@ definitions:
                    repeated Bar results = 1;
                    PageResponse page = 2;
            }
-  terra.taxexemption.v1beta1.QueryTaxExemptionZonesResponse:
+  terra.taxexemption.v1.QueryTaxExemptionZonesResponse:
     type: object
     properties:
       zones:
@@ -64194,7 +64199,12 @@ definitions:
                    repeated Bar results = 1;
                    PageResponse page = 2;
            }
-  terra.taxexemption.v1beta1.Zone:
+  terra.taxexemption.v1.QueryTaxableResponse:
+    type: object
+    properties:
+      taxable:
+        type: boolean
+  terra.taxexemption.v1.Zone:
     type: object
     properties:
       name:
