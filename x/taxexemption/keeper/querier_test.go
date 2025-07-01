@@ -291,4 +291,37 @@ func TestTaxExemptionAddressList(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(res.Addresses))
+
+	// Case 6: Query addresses with zone, pagination (limit=2), and offset=1. Should return 2 addresses starting from the second address.
+	res, err = querier.TaxExemptionAddressList(ctx, &types.QueryTaxExemptionAddressRequest{
+		ZoneName: zoneName1,
+		Pagination: &query.PageRequest{
+			Limit:  2,
+			Offset: 1,
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, len(res.Addresses))
+
+	// Case 7: Query addresses with zone, pagination (limit=2), and offset=2. Should return 1 address starting from the third address.
+	res, err = querier.TaxExemptionAddressList(ctx, &types.QueryTaxExemptionAddressRequest{
+		ZoneName: zoneName1,
+		Pagination: &query.PageRequest{
+			Limit:  2,
+			Offset: 2,
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(res.Addresses))
+
+	// Case 8: Query addresses with zone, pagination (limit=2), and offset greater than total addresses. Should return 0 addresses.
+	res, err = querier.TaxExemptionAddressList(ctx, &types.QueryTaxExemptionAddressRequest{
+		ZoneName: zoneName1,
+		Pagination: &query.PageRequest{
+			Limit:  2,
+			Offset: 3,
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(res.Addresses))
 }
