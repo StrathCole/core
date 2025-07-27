@@ -3,12 +3,13 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	v13 "github.com/classic-terra/core/v3/app/upgrades/v13"
 	"io"
 	stdlog "log"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	v13 "github.com/classic-terra/core/v3/app/upgrades/v13"
 
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
