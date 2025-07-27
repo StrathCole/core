@@ -1,4 +1,4 @@
-package v12_test
+package v13_test
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	v12 "github.com/classic-terra/core/v3/app/upgrades/v12"
+	v13 "github.com/classic-terra/core/v3/app/upgrades/v13"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 )
 
@@ -70,7 +70,7 @@ func (s *UpgradeTestSuite) TestMigrateWasmKeys() {
 	mockWasmKeeper := createMockWasmKeeper(wasmStoreKey)
 
 	// Run the migration
-	err := v12.MigrateWasmKeys(ctx, mockWasmKeeper, wasmStoreKey)
+	err := v13.MigrateWasmKeys(ctx, mockWasmKeeper, wasmStoreKey)
 	require.NoError(s.T(), err)
 
 	// Try to flush the cache directly
@@ -186,7 +186,7 @@ func (s *UpgradeTestSuite) TestRemoveLengthPrefixIfNeeded() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			result := v12.RemoveLengthPrefixIfNeeded(tc.input)
+			result := v13.RemoveLengthPrefixIfNeeded(tc.input)
 			s.Require().Equal(tc.expected, result)
 		})
 	}
@@ -226,7 +226,7 @@ func (s *UpgradeTestSuite) TestMigrateWasmKeysWithLengthPrefixedAddresses() {
 	mockWasmKeeper := createMockWasmKeeper(wasmStoreKey)
 
 	// Run the migration
-	err := v12.MigrateWasmKeys(ctx, mockWasmKeeper, wasmStoreKey)
+	err := v13.MigrateWasmKeys(ctx, mockWasmKeeper, wasmStoreKey)
 	require.NoError(s.T(), err)
 
 	// Commit the store
@@ -287,7 +287,7 @@ func (s *UpgradeTestSuite) TestCollectContractAddresses() {
 	kvStore.Set(append([]byte{0x04}, lengthPrefixedAddr...), []byte("contract3"))
 
 	// Call the function
-	addresses := v12.CollectContractAddresses(kvStore)
+	addresses := v13.CollectContractAddresses(kvStore)
 
 	// Verify results
 	s.Require().Equal(3, len(addresses), "Should collect 3 contract addresses")
@@ -351,7 +351,7 @@ func (s *UpgradeTestSuite) TestMigrateContractStoreKeys() {
 	contractAddresses := [][]byte{addr1, lengthPrefixedAddr}
 
 	// Run the migration
-	err := v12.MigrateContractStoreKeys(kvStore, contractAddresses)
+	err := v13.MigrateContractStoreKeys(kvStore, contractAddresses)
 	require.NoError(s.T(), err)
 
 	// Verify the migration results for pre-collected addresses
@@ -435,7 +435,7 @@ func (s *UpgradeTestSuite) TestMigrateContractKeys() {
 	kvStore.Set(append([]byte{0x04}, lengthPrefixedAddr...), []byte("contract2"))
 
 	// Run the migration
-	err := v12.MigrateContractKeys(kvStore)
+	err := v13.MigrateContractKeys(kvStore)
 	require.NoError(s.T(), err)
 
 	// Verify the migration results

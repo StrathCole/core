@@ -1,5 +1,5 @@
 //nolint:revive
-package v12
+package v13
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
 
-func CreateV12UpgradeHandler(
+func CreateV13UpgradeHandler(
 	mm *module.Manager,
 	cfg module.Configurator,
 	_ upgrades.BaseAppParamManager,

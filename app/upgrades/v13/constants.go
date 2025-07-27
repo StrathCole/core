@@ -1,13 +1,13 @@
 //nolint:revive
-package v12
+package v13
 
 import (
 	"github.com/classic-terra/core/v3/app/upgrades"
 )
 
-const UpgradeName = "v12"
+const UpgradeName = "v13"
 
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
-	CreateUpgradeHandler: CreateV12UpgradeHandler,
+	CreateUpgradeHandler: CreateV13UpgradeHandler,
 }

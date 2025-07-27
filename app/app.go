@@ -3,13 +3,12 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	v13 "github.com/classic-terra/core/v3/app/upgrades/v13"
 	"io"
 	stdlog "log"
 	"net/http"
 	"os"
 	"path/filepath"
-
-	v12 "github.com/classic-terra/core/v3/app/upgrades/v12"
 
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
@@ -104,7 +103,7 @@ var (
 		v11.Upgrade,
 		v11_1.Upgrade,
 		v11_2.Upgrade,
-		v12.Upgrade,
+		v13.Upgrade,
 	}
 
 	// Forks defines forks to be applied to the network
