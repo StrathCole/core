@@ -152,7 +152,6 @@ fi
 sleep 1
 
 # run new node
-echo "running new node ..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
     CONTINUE="true" screen -L -dmS node1 bash scripts/run-node.sh _build/new/terrad $DENOM
 else
