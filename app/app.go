@@ -9,8 +9,6 @@ import (
 	"os"
 	"path/filepath"
 
-	v13 "github.com/classic-terra/core/v3/app/upgrades/v13"
-
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
@@ -68,6 +66,7 @@ import (
 	v11 "github.com/classic-terra/core/v3/app/upgrades/v11"
 	v11_1 "github.com/classic-terra/core/v3/app/upgrades/v11_1"
 	v12 "github.com/classic-terra/core/v3/app/upgrades/v12"
+	v13 "github.com/classic-terra/core/v3/app/upgrades/v13"
 
 	customante "github.com/classic-terra/core/v3/custom/auth/ante"
 	custompost "github.com/classic-terra/core/v3/custom/auth/post"
