@@ -3,10 +3,7 @@ package wasm
 import (
 	"bytes"
 	"io"
-	"reflect"
-	"unsafe"
 
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	coretypes "github.com/classic-terra/core/v3/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -272,39 +269,13 @@ func (l legacyMultiStore) GetKVStore(key storetypes.StoreKey) storetypes.KVStore
 	return l.MultiStore.GetKVStore(key)
 }
 
-// prepareLegacyWasmContext builds a wrapped context using an ephemeral store key with the
-// canonical wasm store name instead of reflection/unsafe access. MultiStore lookups are
-// name-based, so a fresh key with the same name suffices.
-func prepareLegacyWasmContext(ctx sdk.Context, k *wasmkeeper.Keeper) (sdk.Context, bool) {
-	if !isPreWasmKeyMigration(ctx.ChainID(), ctx.BlockHeight()) {
+// prepareLegacyWasmContext wraps the wasm KVStore with a translating legacy store.
+// The real mounted wasm store key is injected (dependency injection) instead of
+// being discovered via reflection/unsafe.
+func prepareLegacyWasmContext(ctx sdk.Context, wasmKey storetypes.StoreKey) (sdk.Context, bool) {
+	if wasmKey == nil || !isPreWasmKeyMigration(ctx.ChainID(), ctx.BlockHeight()) {
 		return ctx, false
 	}
-
-	// Attempt to obtain the original mounted store key via reflection (no public accessor upstream).
-	var wasmKey storetypes.StoreKey
-	val := reflect.ValueOf(k)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-	f := val.FieldByName("storeKey")
-	if f.IsValid() {
-		if f.CanInterface() {
-			if sk, ok := f.Interface().(storetypes.StoreKey); ok {
-				wasmKey = sk
-			}
-		}
-		if wasmKey == nil && f.CanAddr() { // fall back to unsafe only if needed
-			skVal := reflect.NewAt(f.Type(), unsafe.Pointer(f.UnsafeAddr())).Elem()
-			if sk, ok := skVal.Interface().(storetypes.StoreKey); ok {
-				wasmKey = sk
-			}
-		}
-	}
-	if wasmKey == nil {
-		ctx.Logger().Info("legacy wasm: could not obtain wasm store key; skipping mapping")
-		return ctx, false
-	}
-
 	legacyStore := &legacyWasmStore{parent: ctx.KVStore(wasmKey)}
 	wrapped := legacyMultiStore{MultiStore: ctx.MultiStore(), wasmKey: wasmKey, legacy: legacyStore}
 	newCtx := sdk.NewContext(wrapped, ctx.BlockHeader(), false, ctx.Logger())

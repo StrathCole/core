@@ -7,6 +7,7 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	legacyupgrade "github.com/classic-terra/core/v3/custom/upgrade/legacy"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -24,17 +25,21 @@ type LegacyWasmParams struct {
 type LegacyQueryServer struct {
 	// Embed the original query server to inherit all methods
 	wasmtypes.QueryServer
-	keeper *wasmkeeper.Keeper
+	keeper   *wasmkeeper.Keeper
+	storeKey storetypes.StoreKey
 }
 
 // NewLegacyQueryServer creates a new LegacyQueryServer instance
+
 func NewLegacyQueryServer(
 	originalServer wasmtypes.QueryServer,
 	keeper *wasmkeeper.Keeper,
+	storeKey storetypes.StoreKey,
 ) wasmtypes.QueryServer {
 	return &LegacyQueryServer{
 		QueryServer: originalServer,
 		keeper:      keeper,
+		storeKey:    storeKey,
 	}
 }
 
@@ -81,7 +86,7 @@ func (q *LegacyQueryServer) ensureLegacyWasm(ctx context.Context, method string)
 	legacyMode := legacyupgrade.GetLegacyHandling(sdkCtx.ChainID(), sdkCtx.BlockHeight())
 	preMigration := isPreWasmKeyMigration(sdkCtx.ChainID(), sdkCtx.BlockHeight())
 	if preMigration {
-		wrappedCtx, ok := prepareLegacyWasmContext(sdkCtx, q.keeper)
+		wrappedCtx, ok := prepareLegacyWasmContext(sdkCtx, q.storeKey)
 		if ok {
 			ctx = sdk.WrapSDKContext(wrappedCtx)
 			wrappedCtx.Logger().Info("using legacy wasm key mapping", "method", method, "height", wrappedCtx.BlockHeight(), "chain_id", wrappedCtx.ChainID(), "legacy_mode", legacyMode, "pre_migration", preMigration, "store_wrap", ok)
