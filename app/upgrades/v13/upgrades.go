@@ -79,7 +79,7 @@ func migrateWasmKeys(ctx sdk.Context, wasmKeeper wasmkeeper.Keeper, wasmStoreKey
 	}
 
 	// 2.1 Migrate contract keys (0x04 -> 0x02)
-	// This needs to happen before we write to 0x02 with sequence keys
+	// This needs to happen before we write to 0x04 with sequence keys
 	if err := migrateContractKeys(store); err != nil {
 		return fmt.Errorf("failed to migrate contract keys: %w", err)
 	}
@@ -145,19 +145,19 @@ func migrateCodeKeys(store sdk.KVStore) error {
 // Accepts only exact address blobs (or a 1-byte length prefix + address).
 // Never run this on arbitrary composite keys.
 func removeLengthPrefixIfNeeded(b []byte) (out []byte, stripped bool) {
-    // Already a valid address for this chain? Keep as-is.
-    if err := sdk.VerifyAddressFormat(b); err == nil {
-        return bytes.Clone(b), false
-    }
-    // Looks like a [len|payload] and payload is a valid address?
-    if len(b) > 1 && int(b[0]) == len(b)-1 {
-        payload := b[1:]
-        if err := sdk.VerifyAddressFormat(payload); err == nil {
-            return bytes.Clone(payload), true
-        }
-    }
-    // Not an address (or composite) -> don't touch
-    return bytes.Clone(b), false
+	// Already a valid address for this chain? Keep as-is.
+	if err := sdk.VerifyAddressFormat(b); err == nil {
+		return bytes.Clone(b), false
+	}
+	// Looks like a [len|payload] and payload is a valid address?
+	if len(b) > 1 && int(b[0]) == len(b)-1 {
+		payload := b[1:]
+		if err := sdk.VerifyAddressFormat(payload); err == nil {
+			return bytes.Clone(payload), true
+		}
+	}
+	// Not an address (or composite) -> don't touch
+	return bytes.Clone(b), false
 }
 
 // migrateContractHistoryKeys migrates contract history keys from 0x06 to 0x05
@@ -307,63 +307,63 @@ func migrateContractStoreKeys(store sdk.KVStore, contractAddresses [][]byte) err
 		fmt.Printf("Migrated %d keys for contract %X\n", contractKeyCount, unprefixedAddr)
 	}
 
-    // Also handle any direct contract store keys that might not be associated with a contract
-    // (this is a fallback to ensure we don't miss anything)
-    directOldStore := prefix.NewStore(store, oldPrefix)
-    directOldIter := directOldStore.Iterator(nil, nil)
+	// Also handle any direct contract store keys that might not be associated with a contract
+	// (this is a fallback to ensure we don't miss anything)
+	directOldStore := prefix.NewStore(store, oldPrefix)
+	directOldIter := directOldStore.Iterator(nil, nil)
 
-    var directMigrated int
-    for ; directOldIter.Valid(); directOldIter.Next() {
-        // Copy the key and value to avoid issues with shared memory
-        originalKey := make([]byte, len(directOldIter.Key()))
-        copy(originalKey, directOldIter.Key())
+	var directMigrated int
+	for ; directOldIter.Valid(); directOldIter.Next() {
+		// Copy the key and value to avoid issues with shared memory
+		originalKey := make([]byte, len(directOldIter.Key()))
+		copy(originalKey, directOldIter.Key())
 
-        originalValue := make([]byte, len(directOldIter.Value()))
-        copy(originalValue, directOldIter.Value())
+		originalValue := make([]byte, len(directOldIter.Value()))
+		copy(originalValue, directOldIter.Value())
 
-        // Skip nil keys or values
-        if originalKey == nil || originalValue == nil {
-            continue
-        }
+		// Skip nil keys or values
+		if originalKey == nil || originalValue == nil {
+			continue
+		}
 
-        // The structure here is [address_or_len_prefixed_address | subkey...]
-        // We must ONLY attempt to strip a 1-byte length prefix from the address portion,
-        // not from the entire composite key. Determine the address prefix to transform.
-        var rebuiltKey []byte
-        if len(originalKey) > 1 {
-            // Try interpret the first segment as a potential [len|payload]
-            // candidateLen covers the length-prefix byte plus payload
-            candidateLen := int(originalKey[0]) + 1
-            if candidateLen <= len(originalKey) {
-                // Evaluate only the candidate head
-                head := originalKey[:candidateLen]
-                tail := originalKey[candidateLen:]
-                if unprefHead, stripped := removeLengthPrefixIfNeeded(head); stripped {
-                    // Rebuild as [unprefixed_address | tail]
-                    rebuiltKey = append([]byte{}, unprefHead...)
-                    rebuiltKey = append(rebuiltKey, tail...)
-                }
-            }
-        }
-        if rebuiltKey == nil {
-            // Either not length-prefixed or not a valid address head; keep as-is
-            rebuiltKey = originalKey
-        }
+		// The structure here is [address_or_len_prefixed_address | subkey...]
+		// We must ONLY attempt to strip a 1-byte length prefix from the address portion,
+		// not from the entire composite key. Determine the address prefix to transform.
+		var rebuiltKey []byte
+		if len(originalKey) > 1 {
+			// Try interpret the first segment as a potential [len|payload]
+			// candidateLen covers the length-prefix byte plus payload
+			candidateLen := int(originalKey[0]) + 1
+			if candidateLen <= len(originalKey) {
+				// Evaluate only the candidate head
+				head := originalKey[:candidateLen]
+				tail := originalKey[candidateLen:]
+				if unprefHead, stripped := removeLengthPrefixIfNeeded(head); stripped {
+					// Rebuild as [unprefixed_address | tail]
+					rebuiltKey = append([]byte{}, unprefHead...)
+					rebuiltKey = append(rebuiltKey, tail...)
+				}
+			}
+		}
+		if rebuiltKey == nil {
+			// Either not length-prefixed or not a valid address head; keep as-is
+			rebuiltKey = originalKey
+		}
 
-        // Construct full keys - create new slices to avoid modifying the original prefixes
-        oldFullKey := append([]byte{}, oldPrefix...)
-        oldFullKey = append(oldFullKey, originalKey...)
+		// Construct full keys - create new slices to avoid modifying the original prefixes
+		oldFullKey := append([]byte{}, oldPrefix...)
+		oldFullKey = append(oldFullKey, originalKey...)
 
-        newFullKey := append([]byte{}, newPrefix...)
-        newFullKey = append(newFullKey, rebuiltKey...)
+		newFullKey := append([]byte{}, newPrefix...)
+		newFullKey = append(newFullKey, rebuiltKey...)
 
-        // Set with new prefix and delete old
-        store.Set(newFullKey, originalValue)
-        store.Delete(oldFullKey)
+		// Set with new prefix and delete old
+		store.Set(newFullKey, originalValue)
+		store.Delete(oldFullKey)
 
-        directMigrated++
-    }
-    directOldIter.Close()
+		directMigrated++
+	}
+	directOldIter.Close()
 
 	fmt.Printf("Additionally migrated %d direct contract store keys\n", directMigrated)
 	fmt.Printf("Total migrated contract store keys: %d\n", totalMigrated+directMigrated)
