@@ -4,15 +4,16 @@ import (
 	"fmt"
 
 	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	core "github.com/classic-terra/core/v3/types"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
 
 	"github.com/classic-terra/core/v3/x/treasury/types"
 
@@ -86,7 +87,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // GetTaxRate loads the tax rate
-func (k Keeper) GetTaxRate(ctx sdk.Context) sdk.Dec {
+func (k Keeper) GetTaxRate(ctx sdk.Context) sdkmath.LegacyDec {
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(types.TaxRateKey)
 	if b == nil {
@@ -99,14 +100,14 @@ func (k Keeper) GetTaxRate(ctx sdk.Context) sdk.Dec {
 }
 
 // SetTaxRate sets the tax rate
-func (k Keeper) SetTaxRate(ctx sdk.Context, taxRate sdk.Dec) {
+func (k Keeper) SetTaxRate(ctx sdk.Context, taxRate sdkmath.LegacyDec) {
 	store := ctx.KVStore(k.storeKey)
 	b := k.cdc.MustMarshal(&sdk.DecProto{Dec: taxRate})
 	store.Set(types.TaxRateKey, b)
 }
 
 // GetRewardWeight loads the reward weight
-func (k Keeper) GetRewardWeight(ctx sdk.Context) sdk.Dec {
+func (k Keeper) GetRewardWeight(ctx sdk.Context) sdkmath.LegacyDec {
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(types.RewardWeightKey)
 	if b == nil {
@@ -241,20 +242,20 @@ func (k Keeper) PeekEpochSeigniorage(ctx sdk.Context) math.Int {
 	epochSeigniorage := preEpochIssuance.Sub(epochIssuance)
 
 	if epochSeigniorage.IsNegative() {
-		return sdk.ZeroInt()
+		return sdkmath.ZeroInt()
 	}
 
 	return epochSeigniorage
 }
 
 // GetTR returns the tax rewards for the epoch
-func (k Keeper) GetTR(ctx sdk.Context, epoch int64) sdk.Dec {
+func (k Keeper) GetTR(ctx sdk.Context, epoch int64) sdkmath.LegacyDec {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetTRKey(epoch))
 
 	dp := sdk.DecProto{}
 	if bz == nil {
-		dp.Dec = sdk.ZeroDec()
+		dp.Dec = sdkmath.LegacyZeroDec()
 	} else {
 		k.cdc.MustUnmarshal(bz, &dp)
 	}
@@ -263,7 +264,7 @@ func (k Keeper) GetTR(ctx sdk.Context, epoch int64) sdk.Dec {
 }
 
 // SetTR stores the tax rewards for the epoch
-func (k Keeper) SetTR(ctx sdk.Context, epoch int64, tr sdk.Dec) {
+func (k Keeper) SetTR(ctx sdk.Context, epoch int64, tr sdkmath.LegacyDec) {
 	store := ctx.KVStore(k.storeKey)
 
 	bz := k.cdc.MustMarshal(&sdk.DecProto{Dec: tr})
@@ -282,13 +283,13 @@ func (k Keeper) ClearTRs(ctx sdk.Context) {
 }
 
 // GetSR returns the seigniorage rewards for the epoch
-func (k Keeper) GetSR(ctx sdk.Context, epoch int64) sdk.Dec {
+func (k Keeper) GetSR(ctx sdk.Context, epoch int64) sdkmath.LegacyDec {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetSRKey(epoch))
 
 	dp := sdk.DecProto{}
 	if bz == nil {
-		dp.Dec = sdk.ZeroDec()
+		dp.Dec = sdkmath.LegacyZeroDec()
 	} else {
 		k.cdc.MustUnmarshal(bz, &dp)
 	}
@@ -297,7 +298,7 @@ func (k Keeper) GetSR(ctx sdk.Context, epoch int64) sdk.Dec {
 }
 
 // SetSR stores the seigniorage rewards for the epoch
-func (k Keeper) SetSR(ctx sdk.Context, epoch int64, sr sdk.Dec) {
+func (k Keeper) SetSR(ctx sdk.Context, epoch int64, sr sdkmath.LegacyDec) {
 	store := ctx.KVStore(k.storeKey)
 
 	bz := k.cdc.MustMarshal(&sdk.DecProto{Dec: sr})

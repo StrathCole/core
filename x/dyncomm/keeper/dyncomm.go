@@ -1,24 +1,25 @@
 package keeper
 
 import (
+	"cosmossdk.io/math"
 	types "github.com/classic-terra/core/v3/x/dyncomm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 // GetVotingPower calculates the voting power of a validator in percent
-func (k Keeper) CalculateVotingPower(ctx sdk.Context, validator stakingtypes.Validator) (ret sdk.Dec) {
+func (k Keeper) CalculateVotingPower(ctx sdk.Context, validator stakingtypes.Validator) (ret math.LegacyDec) {
 	totalPower := k.StakingKeeper.GetLastTotalPower(ctx).Int64()
 	validatorPower := sdk.TokensToConsensusPower(
 		validator.Tokens,
 		k.StakingKeeper.PowerReduction(ctx),
 	)
-	return sdk.NewDec(validatorPower).QuoInt64(totalPower).MulInt64(100)
+	return math.LegacyNewDec(validatorPower).QuoInt64(totalPower).MulInt64(100)
 }
 
 // CalculateDynCommission calculates the min commission according
 // to StrathColes formula
-func (k Keeper) CalculateDynCommission(ctx sdk.Context, validator stakingtypes.Validator) (ret sdk.Dec) {
+func (k Keeper) CalculateDynCommission(ctx sdk.Context, validator stakingtypes.Validator) (ret math.LegacyDec) {
 	// The original parameters as defined
 	// by Strath
 	A := k.GetMaxZero(ctx)
@@ -41,11 +42,11 @@ func (k Keeper) CalculateDynCommission(ctx sdk.Context, validator stakingtypes.V
 	return y.QuoInt64(100)
 }
 
-func (k Keeper) SetDynCommissionRate(ctx sdk.Context, validator string, rate sdk.Dec) {
+func (k Keeper) SetDynCommissionRate(ctx sdk.Context, validator string, rate math.LegacyDec) {
 	var preSetRate types.ValidatorCommissionRate
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetMinCommissionRatesKey(validator))
-	targetRate := sdk.ZeroDec()
+	targetRate := math.LegacyZeroDec()
 
 	if bz != nil {
 		k.cdc.MustUnmarshal(bz, &preSetRate)
@@ -61,11 +62,11 @@ func (k Keeper) SetDynCommissionRate(ctx sdk.Context, validator string, rate sdk
 	store.Set(types.GetMinCommissionRatesKey(validator), bz)
 }
 
-func (k Keeper) SetTargetCommissionRate(ctx sdk.Context, validator string, rate sdk.Dec) {
+func (k Keeper) SetTargetCommissionRate(ctx sdk.Context, validator string, rate math.LegacyDec) {
 	var preSetRate types.ValidatorCommissionRate
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetMinCommissionRatesKey(validator))
-	minRate := sdk.ZeroDec()
+	minRate := math.LegacyZeroDec()
 
 	if bz != nil {
 		k.cdc.MustUnmarshal(bz, &preSetRate)
@@ -81,11 +82,11 @@ func (k Keeper) SetTargetCommissionRate(ctx sdk.Context, validator string, rate 
 	store.Set(types.GetMinCommissionRatesKey(validator), bz)
 }
 
-func (k Keeper) GetDynCommissionRate(ctx sdk.Context, validator string) (rate sdk.Dec) {
+func (k Keeper) GetDynCommissionRate(ctx sdk.Context, validator string) (rate math.LegacyDec) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetMinCommissionRatesKey(validator))
 	if bz == nil {
-		return sdk.ZeroDec()
+		return math.LegacyZeroDec()
 	}
 
 	var validatorRate types.ValidatorCommissionRate
@@ -93,11 +94,11 @@ func (k Keeper) GetDynCommissionRate(ctx sdk.Context, validator string) (rate sd
 	return *validatorRate.MinCommissionRate
 }
 
-func (k Keeper) GetTargetCommissionRate(ctx sdk.Context, validator string) (rate sdk.Dec) {
+func (k Keeper) GetTargetCommissionRate(ctx sdk.Context, validator string) (rate math.LegacyDec) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetMinCommissionRatesKey(validator))
 	if bz == nil {
-		return sdk.ZeroDec()
+		return math.LegacyZeroDec()
 	}
 
 	var validatorRate types.ValidatorCommissionRate
@@ -124,7 +125,7 @@ func (k Keeper) IterateDynCommissionRates(ctx sdk.Context, cb func(types.Validat
 }
 
 func (k Keeper) UpdateValidatorMinRates(ctx sdk.Context, validator stakingtypes.Validator) {
-	var newRate sdk.Dec
+	var newRate math.LegacyDec
 	minRate := k.CalculateDynCommission(ctx, validator)
 	newMaxRate := validator.Commission.MaxRate
 	targetRate := k.GetTargetCommissionRate(ctx, validator.OperatorAddress)

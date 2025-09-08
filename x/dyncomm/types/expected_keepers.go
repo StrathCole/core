@@ -8,7 +8,7 @@ import (
 
 // AccountKeeper is expected keeper for auth module
 type StakingKeeper interface {
-	MinCommissionRate(ctx sdk.Context) sdk.Dec
+	MinCommissionRate(ctx sdk.Context) math.LegacyDec
 	GetLastTotalPower(ctx sdk.Context) math.Int
 	PowerReduction(ctx sdk.Context) math.Int
 	IterateValidators(sdk.Context, func(index int64, validator stakingtypes.ValidatorI) (stop bool))

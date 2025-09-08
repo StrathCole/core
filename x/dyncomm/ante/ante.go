@@ -11,8 +11,8 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
-	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 
 	dyncommkeeper "github.com/classic-terra/core/v3/x/dyncomm/keeper"
 )
@@ -67,7 +67,7 @@ func (dd DyncommDecorator) FilterMsgsAndProcessMsgs(ctx sdk.Context, msgs ...sdk
 			if data.Type != icatypes.EXECUTE_TX {
 				continue
 			}
-			messages, msgerr := icatypes.DeserializeCosmosTx(dd.cdc, data.Data)
+			messages, msgerr := icatypes.DeserializeCosmosTx(dd.cdc.(codec.Codec), data.Data, "")
 			if msgerr == nil {
 				err = dd.FilterMsgsAndProcessMsgs(ctx, messages...)
 			}

@@ -153,14 +153,12 @@ func (fd FeeDecorator) checkDeductFee(ctx sdk.Context, feeTx sdk.FeeTx, taxes sd
 		if !feesOrTax.IsZero() {
 			needMint := feesOrTax.Sort().Sub(fee.Sort()...)
 			if !needMint.IsZero() {
-				err := fd.bankKeeper.MintCoins(ctx, minttypes.ModuleName, needMint)
-				if err != nil {
+				if err := fd.bankKeeper.MintCoins(sdk.WrapSDKContext(ctx), minttypes.ModuleName, needMint); err != nil {
 					return ctx, err
 				}
 
 				// we need to add the fees to the account balance to avoid deduction errors
-				err = fd.bankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, deductFeesFromAcc.GetAddress(), needMint)
-				if err != nil {
+				if err := fd.bankKeeper.SendCoinsFromModuleToAccount(sdk.WrapSDKContext(ctx), minttypes.ModuleName, deductFeesFromAcc.GetAddress(), needMint); err != nil {
 					return ctx, err
 				}
 			}
@@ -198,8 +196,7 @@ func (fd FeeDecorator) checkDeductFee(ctx sdk.Context, feeTx sdk.FeeTx, taxes sd
 		ctx = ctx.WithValue(taxtypes.ContextKeyTaxDue, taxes).WithValue(taxtypes.ContextKeyTaxPayer, deductFeesFrom.String())
 
 		if !deductFees.IsZero() {
-			err := DeductFees(fd.bankKeeper, ctx, deductFeesFromAcc, deductFees)
-			if err != nil {
+			if err := DeductFees(fd.bankKeeper, ctx, deductFeesFromAcc, deductFees); err != nil {
 				return ctx, err
 			}
 		}
@@ -211,12 +208,12 @@ func (fd FeeDecorator) checkDeductFee(ctx sdk.Context, feeTx sdk.FeeTx, taxes sd
 }
 
 // DeductFees deducts fees from the given account.
-func DeductFees(bankKeeper types.BankKeeper, ctx sdk.Context, acc types.AccountI, fees sdk.Coins) error {
+func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc types.AccountI, fees sdk.Coins) error {
 	if !fees.IsValid() {
 		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
 	}
 
-	err := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, fees)
+	err := bankKeeper.SendCoinsFromAccountToModule(sdk.WrapSDKContext(ctx), acc.GetAddress(), types.FeeCollectorName, fees)
 	if err != nil {
 		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
 	}

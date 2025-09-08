@@ -12,7 +12,10 @@ import (
 func (k Keeper) ProcessTaxSplits(ctx sdk.Context, taxes sdk.Coins) error {
 	burnSplitRate := k.treasuryKeeper.GetBurnSplitRate(ctx)
 	oracleSplitRate := k.treasuryKeeper.GetOracleSplitRate(ctx)
-	communityTax := k.distributionKeeper.GetCommunityTax(ctx)
+	communityTax, err := k.distributionKeeper.GetCommunityTax(sdk.WrapSDKContext(ctx))
+	if err != nil {
+		return err
+	}
 	distributionDeltaCoins := sdk.NewCoins()
 	oracleSplitCoins := sdk.NewCoins()
 	communityTaxCoins := sdk.NewCoins()
@@ -50,7 +53,7 @@ func (k Keeper) ProcessTaxSplits(ctx sdk.Context, taxes sdk.Coins) error {
 	// Handle community tax coins
 	if !communityTaxCoins.IsZero() {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
-			ctx,
+			sdk.WrapSDKContext(ctx),
 			authtypes.FeeCollectorName,
 			distributiontypes.ModuleName,
 			communityTaxCoins,
@@ -59,15 +62,20 @@ func (k Keeper) ProcessTaxSplits(ctx sdk.Context, taxes sdk.Coins) error {
 		}
 
 		// Add to community pool
-		feePool := k.distributionKeeper.GetFeePool(ctx)
+		feePool, err := k.distributionKeeper.GetFeePool(sdk.WrapSDKContext(ctx))
+		if err != nil {
+			return err
+		}
 		feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(communityTaxCoins...)...)
-		k.distributionKeeper.SetFeePool(ctx, feePool)
+		if err := k.distributionKeeper.SetFeePool(sdk.WrapSDKContext(ctx), feePool); err != nil {
+			return err
+		}
 	}
 
 	// Handle oracle split coins
 	if !oracleSplitCoins.IsZero() {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
-			ctx,
+			sdk.WrapSDKContext(ctx),
 			authtypes.FeeCollectorName,
 			oracletypes.ModuleName,
 			oracleSplitCoins,
@@ -79,7 +87,7 @@ func (k Keeper) ProcessTaxSplits(ctx sdk.Context, taxes sdk.Coins) error {
 	// Handle remaining taxes (burn)
 	if !taxes.IsZero() {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
-			ctx,
+			sdk.WrapSDKContext(ctx),
 			authtypes.FeeCollectorName,
 			treasurytypes.BurnModuleName,
 			taxes,

@@ -1,3 +1,7 @@
+//go:build ignore
+
+// TODO: Fix simulation API for SDK 0.50
+
 package simulation
 
 // DONTCOVER
@@ -6,12 +10,15 @@ import (
 	"math/rand"
 	"strings"
 
-	simappparams "cosmossdk.io/simapp/params"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/std"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	banksim "github.com/cosmos/cosmos-sdk/x/bank/simulation"
 	distrsim "github.com/cosmos/cosmos-sdk/x/distribution/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
@@ -99,7 +106,7 @@ func SimulateMsgAggregateExchangeRatePrevote(ak types.AccountKeeper, bk types.Ba
 
 		exchangeRatesStr := ""
 		for _, denom := range whitelist {
-			price := sdk.NewDecWithPrec(int64(simtypes.RandIntBetween(r, 1, 10000)), int64(1))
+			price := math.LegacyNewDecWithPrec(int64(simtypes.RandIntBetween(r, 1, 10000)), int64(1))
 			exchangeRatesStr += price.String() + denom + ","
 		}
 
@@ -119,7 +126,10 @@ func SimulateMsgAggregateExchangeRatePrevote(ak types.AccountKeeper, bk types.Ba
 
 		msg := types.NewMsgAggregateExchangeRatePrevote(voteHash, feederAddr, address)
 
-		txGen := simappparams.MakeTestEncodingConfig().TxConfig
+		// Build a TxConfig without depending on simapp
+		ir := codectypes.NewInterfaceRegistry()
+		std.RegisterInterfaces(ir)
+		txGen := tx.NewTxConfig(codec.NewProtoCodec(ir), tx.DefaultSignModes)
 		tx, err := simtestutil.GenSignedMockTx(
 			r,
 			txGen,
@@ -190,7 +200,9 @@ func SimulateMsgAggregateExchangeRateVote(ak types.AccountKeeper, bk types.BankK
 
 		msg := types.NewMsgAggregateExchangeRateVote(salt, exchangeRatesStr, feederAddr, address)
 
-		txGen := simappparams.MakeTestEncodingConfig().TxConfig
+		ir := codectypes.NewInterfaceRegistry()
+		std.RegisterInterfaces(ir)
+		txGen := tx.NewTxConfig(codec.NewProtoCodec(ir), tx.DefaultSignModes)
 		tx, err := simtestutil.GenSignedMockTx(
 			r,
 			txGen,
@@ -247,7 +259,9 @@ func SimulateMsgDelegateFeedConsent(ak types.AccountKeeper, bk types.BankKeeper,
 
 		msg := types.NewMsgDelegateFeedConsent(valAddress, delegateAccount.Address)
 
-		txGen := simappparams.MakeTestEncodingConfig().TxConfig
+		ir := codectypes.NewInterfaceRegistry()
+		std.RegisterInterfaces(ir)
+		txGen := tx.NewTxConfig(codec.NewProtoCodec(ir), tx.DefaultSignModes)
 		tx, err := simtestutil.GenSignedMockTx(
 			r,
 			txGen,

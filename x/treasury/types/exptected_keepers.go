@@ -1,12 +1,14 @@
 package types
 
 import (
+	"context"
+
 	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
+	oracletypes "github.com/classic-terra/core/v3/x/oracle/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-
-	oracletypes "github.com/classic-terra/core/v3/x/oracle/types"
 )
 
 // AccountKeeper expected account keeper
@@ -31,7 +33,7 @@ type MarketKeeper interface {
 
 // StakingKeeper expected keeper for staking module
 type StakingKeeper interface {
-	TotalBondedTokens(sdk.Context) math.Int // total bonded tokens within the validator set
+	TotalBondedTokens(context.Context) (math.Int, error) // total bonded tokens within the validator set
 }
 
 // DistributionKeeper expected keeper for distribution module
@@ -45,6 +47,6 @@ type OracleKeeper interface {
 	Whitelist(ctx sdk.Context) (res oracletypes.DenomList)
 
 	// only used for test purpose
-	SetLunaExchangeRate(ctx sdk.Context, denom string, exchangeRate sdk.Dec)
+	SetLunaExchangeRate(ctx sdk.Context, denom string, exchangeRate sdkmath.LegacyDec)
 	SetWhitelist(ctx sdk.Context, whitelist oracletypes.DenomList)
 }

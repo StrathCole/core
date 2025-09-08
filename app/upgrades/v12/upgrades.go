@@ -1,14 +1,14 @@
 package v12
 
 import (
+	"cosmossdk.io/store/prefix"
+	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/classic-terra/core/v3/app/keepers"
 	"github.com/classic-terra/core/v3/app/upgrades"
 	taxexemptiontypes "github.com/classic-terra/core/v3/x/taxexemption/types"
 	treasurytypes "github.com/classic-terra/core/v3/x/treasury/types"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
 
 func CreateV12UpgradeHandler(

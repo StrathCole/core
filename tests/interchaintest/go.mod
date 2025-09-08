@@ -1,12 +1,12 @@
 module github.com/classic-terra/core/v3/test/interchaintest
 
-go 1.22.12
+go 1.23.6
 
 require (
 	cosmossdk.io/math v1.4.0
 	github.com/classic-terra/core/v3 v3.0.0-00010101000000-000000000000
-	github.com/cosmos/cosmos-sdk v0.47.17
-	github.com/cosmos/ibc-go/v7 v7.10.0
+	github.com/cosmos/cosmos-sdk v0.50.14
+	github.com/cosmos/ibc-go/v8 v7.10.0
 	github.com/icza/dyno v0.0.0-20220812133438-f0b6f8a18845
 	github.com/strangelove-ventures/interchaintest/v7 v7.0.0
 	github.com/stretchr/testify v1.10.0
@@ -258,7 +258,6 @@ replace (
 	github.com/CosmWasm/wasmvm => github.com/CosmWasm/wasmvm v1.5.8
 	github.com/classic-terra/core/v3 => ../../
 	github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.37.15
-	github.com/cosmos/ibc-go/v7 => github.com/classic-terra/ibc-go/v7 v7.0.0-20240419072319-aa9d74dc39ae
 	github.com/cosmos/ledger-cosmos-go => github.com/terra-money/ledger-terra-go v0.11.2
 	github.com/creachadair/taskgroup => github.com/creachadair/taskgroup v0.6.0
 	// replace goleveldb to optimized one

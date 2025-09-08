@@ -14,7 +14,7 @@ func TestTerraPoolDeltaUpdate(t *testing.T) {
 	input := CreateTestInput(t)
 
 	terraPoolDelta := input.MarketKeeper.GetTerraPoolDelta(input.Ctx)
-	require.Equal(t, sdk.ZeroDec(), terraPoolDelta)
+	require.Equal(t, math.LegacyZeroDec(), terraPoolDelta)
 
 	diff := sdk.NewDec(10)
 	input.MarketKeeper.SetTerraPoolDelta(input.Ctx, diff)

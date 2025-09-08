@@ -12,16 +12,16 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	ibcxfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
-	ibccoretypes "github.com/cosmos/ibc-go/v7/modules/core/types"
+	ibcxfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	ibccoretypes "github.com/cosmos/ibc-go/v8/modules/core/types"
 
+	evtypes "cosmossdk.io/x/evidence/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	captypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	evtypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
+	captypes "github.com/cosmos/ibc-go/modules/capability/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 

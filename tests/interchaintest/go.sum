@@ -878,8 +878,8 @@ github.com/circonus-labs/circonus-gometrics v2.3.1+incompatible/go.mod h1:nmEj6D
 github.com/circonus-labs/circonusllhist v0.1.3/go.mod h1:kMXHVDlOchFAehlya5ePtbp5jckzBHf4XRpQvBOLI+I=
 github.com/classic-terra/goleveldb v0.0.0-20230914223247-2b28f6655121 h1:fjpWDB0hm225wYg9vunyDyTH8ftd5xEUgINJKidj+Tw=
 github.com/classic-terra/goleveldb v0.0.0-20230914223247-2b28f6655121/go.mod h1:q4W45IWZaF22tdD+VEXcAWRA037jwmWEB5VWYORlTpc=
-github.com/classic-terra/ibc-go/v7 v7.0.0-20240419072319-aa9d74dc39ae h1:dPxkxNcORnKN/ZWqzH4zxfi42FK2bes02LgIj5P/f4k=
-github.com/classic-terra/ibc-go/v7 v7.0.0-20240419072319-aa9d74dc39ae/go.mod h1:L/KaEhzV5TGUCTfGysVgMBQtl5Dm7hHitfpk+GIeoAo=
+github.com/classic-terra/ibc-go/v8 v7.0.0-20240419072319-aa9d74dc39ae h1:dPxkxNcORnKN/ZWqzH4zxfi42FK2bes02LgIj5P/f4k=
+github.com/classic-terra/ibc-go/v8 v7.0.0-20240419072319-aa9d74dc39ae/go.mod h1:L/KaEhzV5TGUCTfGysVgMBQtl5Dm7hHitfpk+GIeoAo=
 github.com/clbanning/x2j v0.0.0-20191024224557-825249438eec/go.mod h1:jMjuTZXRI4dUb/I5gc9Hdhagfvm9+RyrPryS/auMzxE=
 github.com/cmars/basen v0.0.0-20150613233007-fe3947df716e h1:0XBUw73chJ1VYSsfvcPvVT7auykAJce9FpRr10L6Qhw=
 github.com/cmars/basen v0.0.0-20150613233007-fe3947df716e/go.mod h1:P13beTBKr5Q18lJe1rIoLUqjM+CB1zYrRg44ZqGuQSA=
@@ -941,8 +941,8 @@ github.com/cosmos/gogoproto v1.7.0 h1:79USr0oyXAbxg3rspGh/m4SWNyoz/GLaAh0QlCe2fr
 github.com/cosmos/gogoproto v1.7.0/go.mod h1:yWChEv5IUEYURQasfyBW5ffkMHR/90hiHgbNgrtp4j0=
 github.com/cosmos/iavl v0.20.1 h1:rM1kqeG3/HBT85vsZdoSNsehciqUQPWrR4BYmqE2+zg=
 github.com/cosmos/iavl v0.20.1/go.mod h1:WO7FyvaZJoH65+HFOsDir7xU9FWk2w9cHXNW1XHcl7A=
-github.com/cosmos/ibc-apps/modules/ibc-hooks/v7 v7.0.0-20250227205721-8a222c546f4f h1:JcN68sbxPCl6w4yMSoaM+tqZ4yFNj5tpwEAw1K1bGGk=
-github.com/cosmos/ibc-apps/modules/ibc-hooks/v7 v7.0.0-20250227205721-8a222c546f4f/go.mod h1:md+Y3uUV5K7B3ddGYULcuU9excvr9mCXZjP8S0m7hTE=
+github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 v7.0.0-20250227205721-8a222c546f4f h1:JcN68sbxPCl6w4yMSoaM+tqZ4yFNj5tpwEAw1K1bGGk=
+github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 v7.0.0-20250227205721-8a222c546f4f/go.mod h1:md+Y3uUV5K7B3ddGYULcuU9excvr9mCXZjP8S0m7hTE=
 github.com/cosmos/ibc-go/modules/capability v1.0.0-rc1 h1:BvSKnPFKxL+TTSLxGKwJN4x0ndCZj0yfXhSvmsQztSA=
 github.com/cosmos/ibc-go/modules/capability v1.0.0-rc1/go.mod h1:A+CxAQdn2j6ihDTbClpEEBdHthWgAUAcHbRAQPY8sl4=
 github.com/cosmos/ics23/go v0.10.0 h1:iXqLLgp2Lp+EdpIuwXTYIQU+AiHj9mOC2X9ab++bZDM=

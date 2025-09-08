@@ -3,7 +3,7 @@ package keeper
 import (
 	treasurykeeper "github.com/classic-terra/core/v3/x/treasury/keeper"
 
-	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
 	taxexemptionkeeper "github.com/classic-terra/core/v3/x/taxexemption/keeper"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -77,10 +77,10 @@ func NewSDKMessageHandler(router MessageRouter, encoders msgEncoder, taxexemptio
 	}
 }
 
-func (h SDKMessageHandler) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, contractIBCPortID string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
+func (h SDKMessageHandler) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, contractIBCPortID string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, msgs [][]*codectypes.Any, err error) {
 	sdkMsgs, err := h.encoders.Encode(ctx, contractAddr, contractIBCPortID, msg)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// contract handling is ALWAYS reverse charged
@@ -92,7 +92,7 @@ func (h SDKMessageHandler) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddr
 		// increase the tax amount for simulation inside of wasm
 		res, err := h.handleSdkMessage(ctx, contractAddr, sdkMsg)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		// append data
 		data = append(data, res.Data)
@@ -102,8 +102,9 @@ func (h SDKMessageHandler) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddr
 			sdkEvents[i] = sdk.Event(res.Events[i])
 		}
 		events = append(events, sdkEvents...)
+		// no additional msg responses to return from SDK handler
 	}
-	return events, data, nil
+	return events, data, nil, nil
 }
 
 func (h SDKMessageHandler) handleSdkMessage(ctx sdk.Context, contractAddr sdk.Address, msg sdk.Msg) (*sdk.Result, error) {

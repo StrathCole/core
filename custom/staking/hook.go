@@ -1,8 +1,10 @@
 package staking
 
 import (
+	"context"
 	"fmt"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -24,22 +26,23 @@ func NewTerraStakingHooks(sk stakingkeeper.Keeper) *TerraStakingHooks {
 }
 
 // Implement required staking hooks interface methods
-func (h TerraStakingHooks) BeforeDelegationCreated(_ sdk.Context, _ sdk.AccAddress, _ sdk.ValAddress) error {
+func (h TerraStakingHooks) BeforeDelegationCreated(_ context.Context, _ sdk.AccAddress, _ sdk.ValAddress) error {
 	return nil
 }
 
-func (h TerraStakingHooks) BeforeDelegationSharesModified(_ sdk.Context, _ sdk.AccAddress, _ sdk.ValAddress) error {
+func (h TerraStakingHooks) BeforeDelegationSharesModified(_ context.Context, _ sdk.AccAddress, _ sdk.ValAddress) error {
 	return nil
 }
 
 // Other required hook methods with empty implementations
-func (h TerraStakingHooks) AfterDelegationModified(ctx sdk.Context, _ sdk.AccAddress, valAddr sdk.ValAddress) error {
-	if ctx.ChainID() != ColumbusChainID {
+func (h TerraStakingHooks) AfterDelegationModified(ctx context.Context, _ sdk.AccAddress, valAddr sdk.ValAddress) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if sdkCtx.ChainID() != ColumbusChainID {
 		return nil
 	}
 
-	validator, found := h.sk.GetValidator(ctx, valAddr)
-	if !found {
+	validator, err := h.sk.GetValidator(ctx, valAddr)
+	if err != nil {
 		return nil
 	}
 
@@ -47,51 +50,51 @@ func (h TerraStakingHooks) AfterDelegationModified(ctx sdk.Context, _ sdk.AccAdd
 	validatorPower := sdk.TokensToConsensusPower(validator.Tokens, h.sk.PowerReduction(ctx))
 
 	// Get the total power of the validator set
-	totalPower := h.sk.GetLastTotalPower(ctx)
+	totalPower, _ := h.sk.GetLastTotalPower(ctx)
 	if totalPower.IsZero() {
 		return nil
 	}
 
 	// Get validator delegation percent
-	validatorDelegationPercent := sdk.NewDec(validatorPower).QuoInt64(totalPower.Int64())
+	validatorDelegationPercent := math.LegacyNewDec(validatorPower).QuoInt64(totalPower.Int64())
 
-	if validatorDelegationPercent.GT(sdk.NewDecWithPrec(20, 2)) {
+	if validatorDelegationPercent.GT(math.LegacyNewDecWithPrec(20, 2)) {
 		return fmt.Errorf("validator power is over the allowed limit")
 	}
 
 	return nil
 }
 
-func (h TerraStakingHooks) BeforeValidatorSlashed(_ sdk.Context, _ sdk.ValAddress, _ sdk.Dec) error {
+func (h TerraStakingHooks) BeforeValidatorSlashed(_ context.Context, _ sdk.ValAddress, _ math.LegacyDec) error {
 	return nil
 }
 
-func (h TerraStakingHooks) BeforeValidatorModified(_ sdk.Context, _ sdk.ValAddress) error {
+func (h TerraStakingHooks) BeforeValidatorModified(_ context.Context, _ sdk.ValAddress) error {
 	return nil
 }
 
-func (h TerraStakingHooks) AfterValidatorBonded(_ sdk.Context, _ sdk.ConsAddress, _ sdk.ValAddress) error {
+func (h TerraStakingHooks) AfterValidatorBonded(_ context.Context, _ sdk.ConsAddress, _ sdk.ValAddress) error {
 	return nil
 }
 
-func (h TerraStakingHooks) AfterValidatorBeginUnbonding(_ sdk.Context, _ sdk.ConsAddress, _ sdk.ValAddress) error {
+func (h TerraStakingHooks) AfterValidatorBeginUnbonding(_ context.Context, _ sdk.ConsAddress, _ sdk.ValAddress) error {
 	return nil
 }
 
-func (h TerraStakingHooks) AfterValidatorRemoved(_ sdk.Context, _ sdk.ConsAddress, _ sdk.ValAddress) error {
+func (h TerraStakingHooks) AfterValidatorRemoved(_ context.Context, _ sdk.ConsAddress, _ sdk.ValAddress) error {
 	return nil
 }
 
-func (h TerraStakingHooks) AfterUnbondingInitiated(_ sdk.Context, _ uint64) error {
+func (h TerraStakingHooks) AfterUnbondingInitiated(_ context.Context, _ uint64) error {
 	return nil
 }
 
 // Add this method to TerraStakingHooks
-func (h TerraStakingHooks) AfterValidatorCreated(_ sdk.Context, _ sdk.ValAddress) error {
+func (h TerraStakingHooks) AfterValidatorCreated(_ context.Context, _ sdk.ValAddress) error {
 	return nil
 }
 
 // Add the missing method
-func (h TerraStakingHooks) BeforeDelegationRemoved(_ sdk.Context, _ sdk.AccAddress, _ sdk.ValAddress) error {
+func (h TerraStakingHooks) BeforeDelegationRemoved(_ context.Context, _ sdk.AccAddress, _ sdk.ValAddress) error {
 	return nil
 }

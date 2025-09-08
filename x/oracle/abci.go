@@ -3,6 +3,7 @@ package oracle
 import (
 	"time"
 
+	"cosmossdk.io/math"
 	core "github.com/classic-terra/core/v3/types"
 	"github.com/classic-terra/core/v3/x/oracle/keeper"
 	"github.com/classic-terra/core/v3/x/oracle/types"
@@ -33,21 +34,25 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 
 			// Exclude not bonded validator
 			if validator.IsBonded() {
-				valAddr := validator.GetOperator()
-				validatorClaimMap[valAddr.String()] = types.NewClaim(validator.GetConsensusPower(powerReduction), 0, 0, valAddr)
+				valAddrStr := validator.GetOperator()
+				valAddr, err := sdk.ValAddressFromBech32(valAddrStr)
+				if err != nil {
+					continue
+				}
+				validatorClaimMap[valAddrStr] = types.NewClaim(validator.GetConsensusPower(powerReduction), 0, 0, valAddr)
 				i++
 			}
 		}
 
 		// Denom-TobinTax map
-		voteTargets := make(map[string]sdk.Dec)
-		k.IterateTobinTaxes(ctx, func(denom string, tobinTax sdk.Dec) bool {
+		voteTargets := make(map[string]math.LegacyDec)
+		k.IterateTobinTaxes(ctx, func(denom string, tobinTax math.LegacyDec) bool {
 			voteTargets[denom] = tobinTax
 			return false
 		})
 
 		// Clear all exchange rates
-		k.IterateLunaExchangeRates(ctx, func(denom string, _ sdk.Dec) (stop bool) {
+		k.IterateLunaExchangeRates(ctx, func(denom string, _ math.LegacyDec) (stop bool) {
 			k.DeleteLunaExchangeRate(ctx, denom)
 			return false
 		})

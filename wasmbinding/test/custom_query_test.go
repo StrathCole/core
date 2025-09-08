@@ -3,7 +3,7 @@ package wasmbinding_test
 import (
 	"encoding/json"
 
-	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
 
 	core "github.com/classic-terra/core/v3/types"
 	"github.com/classic-terra/core/v3/wasmbinding/bindings"

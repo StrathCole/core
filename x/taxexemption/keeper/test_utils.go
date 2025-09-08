@@ -7,7 +7,6 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/stretchr/testify/require"
 
-	simappparams "cosmossdk.io/simapp/params"
 	customauth "github.com/classic-terra/core/v3/custom/auth"
 	custombank "github.com/classic-terra/core/v3/custom/bank"
 	customdistr "github.com/classic-terra/core/v3/custom/distribution"
@@ -28,8 +27,9 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	store "cosmossdk.io/store"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -48,14 +48,26 @@ var ModuleBasics = module.NewBasicManager(
 )
 
 func MakeTestCodec(t *testing.T) codec.Codec {
-	return MakeEncodingConfig(t).Codec
+    return MakeEncodingConfig(t).Codec
 }
 
-func MakeEncodingConfig(_ *testing.T) simappparams.EncodingConfig {
-	encodingConfig := simappparams.MakeTestEncodingConfig()
-	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	return encodingConfig
+type EncodingConfig struct {
+    InterfaceRegistry codectypes.InterfaceRegistry
+    Codec             codec.Codec
+    Amino             *codec.LegacyAmino
+}
+
+func MakeEncodingConfig(_ *testing.T) EncodingConfig {
+    amino := codec.NewLegacyAmino()
+    interfaceRegistry := codectypes.NewInterfaceRegistry()
+    cdc := codec.NewProtoCodec(interfaceRegistry)
+    ModuleBasics.RegisterLegacyAminoCodec(amino)
+    ModuleBasics.RegisterInterfaces(interfaceRegistry)
+    return EncodingConfig{
+        InterfaceRegistry: interfaceRegistry,
+        Codec:             cdc,
+        Amino:             amino,
+    }
 }
 
 var (

@@ -8,7 +8,7 @@ import (
 	"github.com/classic-terra/core/v3/x/tax/types"
 	treasurykeeper "github.com/classic-terra/core/v3/x/treasury/keeper"
 	"github.com/cosmos/cosmos-sdk/codec"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
