@@ -14,13 +14,14 @@ import (
 	"github.com/spf13/cast"
 
 	appmempool "github.com/classic-terra/core/v3/app/mempool"
-	dbm "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/cometbft/cometbft/libs/log"
 	tmos "github.com/cometbft/cometbft/libs/os"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
 
+	sdklog "cosmossdk.io/log"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -81,6 +82,19 @@ import (
 )
 
 const appName = "TerraApp"
+
+// tmToSdkLogger adapts a CometBFT logger to cosmossdk.io/log.Logger.
+type tmToSdkLogger struct{ tm log.Logger }
+
+func (l tmToSdkLogger) Info(msg string, keyvals ...any)  { l.tm.Info(msg, keyvals...) }
+func (l tmToSdkLogger) Error(msg string, keyvals ...any) { l.tm.Error(msg, keyvals...) }
+func (l tmToSdkLogger) Warn(msg string, keyvals ...any)  { l.tm.Info("WARN: "+msg, keyvals...) }
+func (l tmToSdkLogger) Debug(msg string, keyvals ...any) { l.tm.Debug(msg, keyvals...) }
+func (l tmToSdkLogger) With(keyvals ...any) sdklog.Logger {
+	return tmToSdkLogger{tm: l.tm.With(keyvals...)}
+}
+
+func (l tmToSdkLogger) Impl() interface{} { return l.tm }
 
 var (
 	// DefaultNodeHome defines default home directories for terrad
@@ -185,7 +199,8 @@ func NewTerraApp(
 		app.SetProcessProposal(handler.ProcessProposalHandler())
 	})
 
-	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseAppOptions...)
+	// adapt CometBFT logger to cosmossdk.io/log.Logger expected by BaseApp
+	bApp := baseapp.NewBaseApp(appName, tmToSdkLogger{tm: logger}, db, txConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 
@@ -347,24 +362,24 @@ func (app *TerraApp) DefaultGenesis() map[string]json.RawMessage {
 }
 
 // BeginBlocker application updates every begin block
-func (app *TerraApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+func (app *TerraApp) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
 	BeginBlockForks(ctx, app)
-	return app.mm.BeginBlock(ctx, req)
+	return app.mm.BeginBlock(ctx)
 }
 
 // EndBlocker application updates every end block
-func (app *TerraApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-	return app.mm.EndBlock(ctx, req)
+func (app *TerraApp) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
+	return app.mm.EndBlock(ctx)
 }
 
 // PreBlocker runs before BeginBlocker in v0.50 and allows modules like x/upgrade
 // to make consensus parameter changes visible to the rest of the block.
-func (app *TerraApp) PreBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
-	return app.mm.PreBlock(ctx, req)
+func (app *TerraApp) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	return app.mm.PreBlock(ctx)
 }
 
 // InitChainer application update at chain initialization
-func (app *TerraApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *TerraApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	var genesisState GenesisState
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
@@ -471,8 +486,8 @@ func (app *TerraApp) RegisterTendermintService(clientCtx client.Context) {
 	)
 }
 
-func (app *TerraApp) RegisterNodeService(clientCtx client.Context) {
-	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter())
+func (app *TerraApp) RegisterNodeService(clientCtx client.Context, config config.Config) {
+	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter(), config)
 }
 
 // RegisterSwaggerAPI registers swagger route with API Server

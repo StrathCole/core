@@ -2,6 +2,8 @@
 package v8_1
 
 import (
+	"context"
+
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/classic-terra/core/v3/app/keepers"
 	"github.com/classic-terra/core/v3/app/upgrades"
@@ -16,9 +18,10 @@ func CreateV81UpgradeHandler(
 	_ upgrades.BaseAppParamManager,
 	keepers *keepers.AppKeepers,
 ) upgradetypes.UpgradeHandler {
-	return func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+	return func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
 		// set default oracle split
-		keepers.TreasuryKeeper.SetOracleSplitRate(ctx, treasurytypes.DefaultOracleSplit)
+		keepers.TreasuryKeeper.SetOracleSplitRate(sdkCtx, treasurytypes.DefaultOracleSplit)
 		return mm.RunMigrations(ctx, cfg, fromVM)
 	}
 }

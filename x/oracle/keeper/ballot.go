@@ -19,7 +19,7 @@ func (k Keeper) OrganizeBallotByDenom(ctx sdk.Context, validatorClaimMap map[str
 	// Organize aggregate votes
 	aggregateHandler := func(voterAddr sdk.ValAddress, vote types.AggregateExchangeRateVote) (stop bool) {
 		// organize ballot only for the active validators
-		claim, ok := validatorClaimMap[vote.Voter]
+		claim, ok := validatorClaimMap[voterAddr.String()]
 
 		if ok {
 			power := claim.Power

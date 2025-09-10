@@ -76,7 +76,7 @@ func (dd DyncommDecorator) FilterMsgsAndProcessMsgs(ctx sdk.Context, msgs ...sdk
 		}
 
 		if err != nil {
-			return errorsmod.Wrapf(sdkerrors.ErrUnauthorized, err.Error())
+			return errorsmod.Wrapf(sdkerrors.ErrUnauthorized, "%s", err.Error())
 		}
 
 	}

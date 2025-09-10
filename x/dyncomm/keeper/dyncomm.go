@@ -9,12 +9,16 @@ import (
 
 // GetVotingPower calculates the voting power of a validator in percent
 func (k Keeper) CalculateVotingPower(ctx sdk.Context, validator stakingtypes.Validator) (ret math.LegacyDec) {
-	totalPower := k.StakingKeeper.GetLastTotalPower(ctx).Int64()
+	totalPower, err := k.StakingKeeper.GetLastTotalPower(ctx)
+	if err != nil {
+		return math.LegacyZeroDec()
+	}
+
 	validatorPower := sdk.TokensToConsensusPower(
 		validator.Tokens,
 		k.StakingKeeper.PowerReduction(ctx),
 	)
-	return math.LegacyNewDec(validatorPower).QuoInt64(totalPower).MulInt64(100)
+	return math.LegacyNewDec(validatorPower).QuoInt64(totalPower.Int64()).MulInt64(100)
 }
 
 // CalculateDynCommission calculates the min commission according
@@ -30,7 +34,12 @@ func (k Keeper) CalculateDynCommission(ctx sdk.Context, validator stakingtypes.V
 	factorA := x.Sub(A)
 	quotient := x.Quo(C)
 	factorB := quotient.Add(B)
-	minComm := k.StakingKeeper.MinCommissionRate(ctx).MulInt64(100)
+	minComm, err := k.StakingKeeper.MinCommissionRate(ctx)
+	if err != nil {
+		return math.LegacyZeroDec()
+	}
+
+	minComm = minComm.MulInt64(100)
 
 	y := factorA.Mul(factorB)
 	if y.GT(D) {

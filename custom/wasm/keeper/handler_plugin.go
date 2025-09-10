@@ -3,6 +3,7 @@ package keeper
 import (
 	treasurykeeper "github.com/classic-terra/core/v3/x/treasury/keeper"
 
+	errorsmod "cosmossdk.io/errors"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
 	taxexemptionkeeper "github.com/classic-terra/core/v3/x/taxexemption/keeper"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -60,7 +61,6 @@ func NewMessageHandler(
 	}
 	return wasmkeeper.NewMessageHandlerChain(
 		NewSDKMessageHandler(router, encoders, taxexemptionKeeper, treasuryKeeper, accountKeeper, bankKeeper, taxKeeper),
-		wasmkeeper.NewIBCRawPacketHandler(ics4Wrapper, channelKeeper, capabilityKeeper),
 		wasmkeeper.NewBurnCoinMessageHandler(bankKeeper),
 	)
 }
@@ -108,26 +108,10 @@ func (h SDKMessageHandler) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddr
 }
 
 func (h SDKMessageHandler) handleSdkMessage(ctx sdk.Context, contractAddr sdk.Address, msg sdk.Msg) (*sdk.Result, error) {
-	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
-	}
-	// make sure this account can send it
-	for _, acct := range msg.GetSigners() {
-		if !acct.Equals(contractAddr) {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "contract doesn't have permission")
-		}
-	}
-
-	// find the handler and execute it
+	// Route and execute the message; message basic validation and signer checks are handled by the router endpoints
 	if handler := h.router.Handler(msg); handler != nil {
-		// ADR 031 request type routing
 		msgResult, err := handler(ctx, msg)
 		return msgResult, err
 	}
-	// legacy sdk.Msg routing
-	// Assuming that the app developer has migrated all their Msgs to
-	// proto messages and has registered all `Msg services`, then this
-	// path should never be called, because all those Msgs should be
-	// registered within the `msgServiceRouter` already.
-	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "can't route message %+v", msg)
+	return nil, errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "can't route message %+v", msg)
 }

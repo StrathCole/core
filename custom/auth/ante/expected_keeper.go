@@ -2,20 +2,20 @@ package ante
 
 import (
 	"context"
-	"cosmossdk.io/math"
+
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 )
 
 // TreasuryKeeper for tax charging & recording
 type TreasuryKeeper interface {
 	RecordEpochTaxProceeds(ctx sdk.Context, delta sdk.Coins)
-	GetTaxRate(ctx sdk.Context) (taxRate sdk.Dec)
-	GetTaxCap(ctx sdk.Context, denom string) (taxCap math.Int)
-	GetBurnSplitRate(ctx sdk.Context) sdk.Dec
-	GetMinInitialDepositRatio(ctx sdk.Context) sdk.Dec
-	GetOracleSplitRate(ctx sdk.Context) sdk.Dec
+	GetTaxRate(ctx sdk.Context) (taxRate sdkmath.LegacyDec)
+	GetTaxCap(ctx sdk.Context, denom string) (taxCap sdkmath.Int)
+	GetBurnSplitRate(ctx sdk.Context) sdkmath.LegacyDec
+	GetMinInitialDepositRatio(ctx sdk.Context) sdkmath.LegacyDec
+	GetOracleSplitRate(ctx sdk.Context) sdkmath.LegacyDec
 }
 
 // OracleKeeper for feeder validation
@@ -42,5 +42,5 @@ type GovKeeper interface {
 }
 
 type TaxKeeper interface {
-	GetBurnTaxRate(ctx sdk.Context) sdk.Dec
+	GetBurnTaxRate(ctx sdk.Context) sdkmath.LegacyDec
 }

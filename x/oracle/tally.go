@@ -50,9 +50,15 @@ func PickReferenceTerra(ctx sdk.Context, k keeper.Keeper, voteTargets map[string
 	largestBallotPower := int64(0)
 	referenceTerra := ""
 
-	totalBondedPower := sdk.TokensToConsensusPower(k.StakingKeeper.TotalBondedTokens(ctx), k.StakingKeeper.PowerReduction(ctx))
+	totalBondedTokens, err := k.StakingKeeper.TotalBondedTokens(ctx)
+	if err != nil {
+		return ""
+	}
 	voteThreshold := k.VoteThreshold(ctx)
-	thresholdVotes := voteThreshold.MulInt64(totalBondedPower).RoundInt()
+	// Convert bonded tokens to consensus power to match ballot power units
+	powerReduction := k.StakingKeeper.PowerReduction(ctx)
+	totalBondedPower := totalBondedTokens.Quo(powerReduction)
+	thresholdVotes := voteThreshold.MulInt(totalBondedPower).RoundInt()
 
 	for denom, ballot := range voteMap {
 		// If denom is not in the voteTargets, or the ballot for it has failed, then skip

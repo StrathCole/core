@@ -1,7 +1,3 @@
-//go:build ignore
-
-// TODO: Fix simulation API for SDK 0.50
-
 package simulation
 
 // DONTCOVER

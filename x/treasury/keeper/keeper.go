@@ -15,9 +15,9 @@ import (
 
 	"cosmossdk.io/log"
 
-	"github.com/classic-terra/core/v3/x/treasury/types"
-
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	"github.com/classic-terra/core/v3/x/treasury/types"
+	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 )
 
 // Keeper of the treasury store
@@ -30,7 +30,7 @@ type Keeper struct {
 	bankKeeper    types.BankKeeper
 	marketKeeper  types.MarketKeeper
 	stakingKeeper types.StakingKeeper
-	distrKeeper   types.DistributionKeeper
+	distrKeeper   distrkeeper.Keeper
 	oracleKeeper  types.OracleKeeper
 	wasmKeeper    *wasmkeeper.Keeper
 
@@ -47,7 +47,7 @@ func NewKeeper(
 	marketKeeper types.MarketKeeper,
 	oracleKeeper types.OracleKeeper,
 	stakingKeeper types.StakingKeeper,
-	distrKeeper types.DistributionKeeper,
+	distrKeeper distrkeeper.Keeper,
 	wasmKeeper *wasmkeeper.Keeper,
 	distributionModuleName string,
 ) Keeper {
@@ -150,11 +150,12 @@ func (k Keeper) GetTaxCap(ctx sdk.Context, denom string) math.Int {
 // IterateTaxCap iterates all tax cap
 func (k Keeper) IterateTaxCap(ctx sdk.Context, handler func(denom string, taxCap math.Int) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
-	iter := sdk.KVStorePrefixIterator(store, types.TaxCapKey)
+	sub := prefix.NewStore(store, types.TaxCapKey)
+	iter := sub.Iterator(nil, nil)
 
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
-		denom := string(iter.Key()[len(types.TaxCapKey):])
+		denom := string(iter.Key())
 		var ip sdk.IntProto
 		k.cdc.MustUnmarshal(iter.Value(), &ip)
 
@@ -275,10 +276,11 @@ func (k Keeper) SetTR(ctx sdk.Context, epoch int64, tr sdkmath.LegacyDec) {
 func (k Keeper) ClearTRs(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 
-	iter := sdk.KVStorePrefixIterator(store, types.TRKey)
+	sub := prefix.NewStore(store, types.TRKey)
+	iter := sub.Iterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.Key())
+		sub.Delete(iter.Key())
 	}
 }
 
@@ -309,10 +311,11 @@ func (k Keeper) SetSR(ctx sdk.Context, epoch int64, sr sdkmath.LegacyDec) {
 func (k Keeper) ClearSRs(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 
-	iter := sdk.KVStorePrefixIterator(store, types.SRKey)
+	sub := prefix.NewStore(store, types.SRKey)
+	iter := sub.Iterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.Key())
+		sub.Delete(iter.Key())
 	}
 }
 
@@ -343,10 +346,11 @@ func (k Keeper) SetTSL(ctx sdk.Context, epoch int64, tsl math.Int) {
 func (k Keeper) ClearTSLs(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 
-	iter := sdk.KVStorePrefixIterator(store, types.TSLKey)
+	sub := prefix.NewStore(store, types.TSLKey)
+	iter := sub.Iterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.Key())
+		sub.Delete(iter.Key())
 	}
 }
 

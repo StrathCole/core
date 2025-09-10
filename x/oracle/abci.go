@@ -22,15 +22,25 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 		// Build claim map over all validators in active set
 		validatorClaimMap := make(map[string]types.Claim)
 
-		maxValidators := k.StakingKeeper.MaxValidators(ctx)
-		iterator := k.StakingKeeper.ValidatorsPowerStoreIterator(ctx)
+		maxValidators, err := k.StakingKeeper.MaxValidators(ctx)
+		if err != nil {
+			return
+		}
+
+		iterator, err := k.StakingKeeper.ValidatorsPowerStoreIterator(ctx)
+		if err != nil {
+			return
+		}
 		defer iterator.Close()
 
 		powerReduction := k.StakingKeeper.PowerReduction(ctx)
 
 		i := 0
 		for ; iterator.Valid() && i < int(maxValidators); iterator.Next() {
-			validator := k.StakingKeeper.Validator(ctx, iterator.Value())
+			validator, err := k.StakingKeeper.Validator(ctx, iterator.Value())
+			if err != nil {
+				continue
+			}
 
 			// Exclude not bonded validator
 			if validator.IsBonded() {

@@ -66,7 +66,10 @@ func (k Keeper) RewardBallotWinners(
 	// Dole out rewards
 	var distributedReward sdk.Coins
 	for _, winner := range ballotWinners {
-		receiverVal := k.StakingKeeper.Validator(ctx, winner.Recipient)
+		receiverVal, err := k.StakingKeeper.Validator(ctx, winner.Recipient)
+		if err != nil {
+			continue
+		}
 
 		// Reflects contribution
 		rewardCoins, _ := periodRewards.MulDec(math.LegacyNewDec(winner.Weight).QuoInt64(ballotPowerSum)).TruncateDecimal()

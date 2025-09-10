@@ -3,10 +3,10 @@ package ante
 import (
     errorsmod "cosmossdk.io/errors"
     corestoretypes "cosmossdk.io/core/store"
+    txsigning "cosmossdk.io/x/tx/signing"
     sdk "github.com/cosmos/cosmos-sdk/types"
     sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
     "github.com/cosmos/cosmos-sdk/x/auth/ante"
-    "github.com/cosmos/cosmos-sdk/x/auth/signing"
     distributionkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
     govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 
@@ -33,7 +33,7 @@ type HandlerOptions struct {
     OracleKeeper           OracleKeeper
     TreasuryKeeper         TreasuryKeeper
     TaxExemptionKeeper     taxexemptionkeeper.Keeper
-    SignModeHandler        signing.SignModeHandler
+    SignModeHandler        *txsigning.HandlerMap
     SigGasConsumer         ante.SignatureVerificationGasConsumer
     TxFeeChecker           ante.TxFeeChecker
     IBCKeeper              ibckeeper.Keeper

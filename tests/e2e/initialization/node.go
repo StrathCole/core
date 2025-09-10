@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	sdkmath "cosmossdk.io/math"
 	tmconfig "github.com/cometbft/cometbft/config"
 	tmos "github.com/cometbft/cometbft/libs/os"
 	"github.com/cometbft/cometbft/p2p"
@@ -77,13 +78,13 @@ func (n *internalNode) configDir() string {
 func (n *internalNode) buildCreateValidatorMsg(amount sdk.Coin) (sdk.Msg, error) {
 	description := stakingtypes.NewDescription(n.moniker, "", "", "", "")
 	commissionRates := stakingtypes.CommissionRates{
-		Rate:          sdk.MustNewDecFromStr("0.1"),
-		MaxRate:       sdk.MustNewDecFromStr("0.2"),
-		MaxChangeRate: sdk.MustNewDecFromStr("0.01"),
+		Rate:          sdkmath.LegacyMustNewDecFromStr("0.1"),
+		MaxRate:       sdkmath.LegacyMustNewDecFromStr("0.2"),
+		MaxChangeRate: sdkmath.LegacyMustNewDecFromStr("0.01"),
 	}
 
 	// get the initial validator min self delegation
-	minSelfDelegation, _ := sdk.NewIntFromString("1")
+	minSelfDelegation, _ := sdkmath.NewIntFromString("1")
 
 	valPubKey, err := cryptocodec.FromTmPubKeyInterface(n.consensusKey.PubKey)
 	if err != nil {
@@ -94,7 +95,7 @@ func (n *internalNode) buildCreateValidatorMsg(amount sdk.Coin) (sdk.Msg, error)
 		return nil, err
 	}
 	return stakingtypes.NewMsgCreateValidator(
-		sdk.ValAddress(accAdd),
+		accAdd.String(),
 		valPubKey,
 		amount,
 		description,

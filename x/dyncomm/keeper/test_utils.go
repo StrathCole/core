@@ -1,4 +1,3 @@
-//go:build ignore
 package keeper
 
 //nolint
@@ -10,7 +9,7 @@ import (
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	"cosmossdk.io/store/metrics"
+	storemetrics "cosmossdk.io/store/metrics"
 	"github.com/stretchr/testify/require"
 
 	customauth "github.com/classic-terra/core/v3/custom/auth"
@@ -20,16 +19,19 @@ import (
 	customstaking "github.com/classic-terra/core/v3/custom/staking"
 	core "github.com/classic-terra/core/v3/types"
 
-	dbm "github.com/cosmos/cosmos-db"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
 
-	types "github.com/classic-terra/core/v3/x/dyncomm/types"
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/std"
+	sdkmath "cosmossdk.io/math"
 	store "cosmossdk.io/store"
 	storetypes "cosmossdk.io/store/types"
+	types "github.com/classic-terra/core/v3/x/dyncomm/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/address"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
+	"github.com/cosmos/cosmos-sdk/std"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -45,7 +47,6 @@ import (
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 )
 
 const faucetAccountName = "faucet"
@@ -142,7 +143,7 @@ func CreateTestInput(t *testing.T) TestInput {
 	keyDyncomm := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()
-	ms := store.NewCommitMultiStore(db)
+	ms := store.NewCommitMultiStore(db, log.NewNopLogger(), storemetrics.NewNoOpMetrics())
 	ctx := sdk.NewContext(ms, tmproto.Header{Time: time.Now().UTC()}, false, log.NewNopLogger())
 	encodingConfig := MakeEncodingConfig(t)
 	appCodec, legacyAmino := encodingConfig.Codec, encodingConfig.Amino
@@ -158,44 +159,39 @@ func CreateTestInput(t *testing.T) TestInput {
 	require.NoError(t, ms.LoadLatestVersion())
 
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, keyParams, tKeyParams)
-	accountKeeper := authkeeper.NewAccountKeeper(appCodec, keyAcc, authtypes.ProtoBaseAccount, maccPerms, sdk.GetConfig().GetBech32AccountAddrPrefix(), authtypes.NewModuleAddress(govtypes.ModuleName).String())
-	bankKeeper := bankkeeper.NewBaseKeeper(appCodec, keyBank, accountKeeper, blackListAddrs, authtypes.NewModuleAddress(govtypes.ModuleName).String())
+	accAddrCodec := address.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
+	accountKeeper := authkeeper.NewAccountKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keyAcc),
+		authtypes.ProtoBaseAccount,
+		maccPerms,
+		accAddrCodec,
+		sdk.GetConfig().GetBech32AccountAddrPrefix(),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+	bankKeeper := bankkeeper.NewBaseKeeper(appCodec, runtime.NewKVStoreService(keyBank), accountKeeper, blackListAddrs, authtypes.NewModuleAddress(govtypes.ModuleName).String(), log.NewNopLogger())
 
 	totalSupply := sdk.NewCoins(sdk.NewCoin(core.MicroLunaDenom, math.Int(math.LegacyNewDec(1_000_000_000_000))))
-	err := bankKeeper.MintCoins(ctx, faucetAccountName, totalSupply)
-	require.NoError(t, err)
 
-	stakingKeeper := stakingkeeper.NewKeeper(
-		appCodec,
-		keyStaking,
-		accountKeeper,
-		bankKeeper,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-	)
-
-	stakingParams := stakingtypes.DefaultParams()
-	stakingParams.BondDenom = core.MicroLunaDenom
-	stakingKeeper.SetParams(ctx, stakingParams)
-
-	distrKeeper := distrkeeper.NewKeeper(
-		appCodec, keyDistr,
-		accountKeeper, bankKeeper, stakingKeeper,
-		authtypes.FeeCollectorName,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-	)
-
-	distrKeeper.SetFeePool(ctx, distrtypes.InitialFeePool())
-	distrParams := distrtypes.DefaultParams()
-	distrParams.CommunityTax = sdk.NewDecWithPrec(2, 2)
-	distrParams.BaseProposerReward = sdk.NewDecWithPrec(1, 2)
-	distrParams.BonusProposerReward = sdk.NewDecWithPrec(4, 2)
-	distrKeeper.SetParams(ctx, distrParams)
-	stakingKeeper.SetHooks(stakingtypes.NewMultiStakingHooks(distrKeeper.Hooks()))
-
+	faucetAcc := authtypes.NewEmptyModuleAccount(faucetAccountName, authtypes.Minter)
 	feeCollectorAcc := authtypes.NewEmptyModuleAccount(authtypes.FeeCollectorName)
 	notBondedPool := authtypes.NewEmptyModuleAccount(stakingtypes.NotBondedPoolName, authtypes.Burner, authtypes.Staking)
 	bondPool := authtypes.NewEmptyModuleAccount(stakingtypes.BondedPoolName, authtypes.Burner, authtypes.Staking)
 	distrAcc := authtypes.NewEmptyModuleAccount(distrtypes.ModuleName)
+
+	faucetAccI := accountKeeper.NewAccount(ctx, faucetAcc)
+	accountKeeper.SetModuleAccount(ctx, faucetAccI.(authtypes.ModuleAccountI))
+	feeCollectorAccI := accountKeeper.NewAccount(ctx, feeCollectorAcc)
+	accountKeeper.SetModuleAccount(ctx, feeCollectorAccI.(authtypes.ModuleAccountI))
+	bondPoolAccI := accountKeeper.NewAccount(ctx, bondPool)
+	accountKeeper.SetModuleAccount(ctx, bondPoolAccI.(authtypes.ModuleAccountI))
+	notBondedPoolAccI := accountKeeper.NewAccount(ctx, notBondedPool)
+	accountKeeper.SetModuleAccount(ctx, notBondedPoolAccI.(authtypes.ModuleAccountI))
+	distrAccI := accountKeeper.NewAccount(ctx, distrAcc)
+	accountKeeper.SetModuleAccount(ctx, distrAccI.(authtypes.ModuleAccountI))
+
+	err := bankKeeper.MintCoins(ctx, faucetAccountName, totalSupply)
+	require.NoError(t, err)
 
 	err = bankKeeper.SendCoinsFromModuleToModule(
 		ctx, faucetAccountName, stakingtypes.NotBondedPoolName,
@@ -203,13 +199,40 @@ func CreateTestInput(t *testing.T) TestInput {
 	)
 	require.NoError(t, err)
 
-	accountKeeper.SetModuleAccount(ctx, feeCollectorAcc)
-	accountKeeper.SetModuleAccount(ctx, bondPool)
-	accountKeeper.SetModuleAccount(ctx, notBondedPool)
-	accountKeeper.SetModuleAccount(ctx, distrAcc)
+	stakingKeeper := stakingkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keyStaking),
+		accountKeeper,
+		bankKeeper,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		address.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix()),
+		address.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix()),
+	)
+
+	stakingParams := stakingtypes.DefaultParams()
+	stakingParams.BondDenom = core.MicroLunaDenom
+	stakingKeeper.SetParams(ctx, stakingParams)
+
+	distrKeeper := distrkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keyDistr),
+		accountKeeper, bankKeeper, stakingKeeper,
+		authtypes.FeeCollectorName,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
+	distrKeeper.FeePool.Set(ctx, distrtypes.InitialFeePool())
+	distrParams := distrtypes.DefaultParams()
+	distrParams.CommunityTax = sdkmath.LegacyNewDecWithPrec(2, 2)
+	distrParams.BaseProposerReward = sdkmath.LegacyNewDecWithPrec(1, 2)
+	distrParams.BonusProposerReward = sdkmath.LegacyNewDecWithPrec(4, 2)
+	distrKeeper.Params.Set(ctx, distrParams)
+	stakingKeeper.SetHooks(stakingtypes.NewMultiStakingHooks(distrKeeper.Hooks()))
 
 	for idx := range PubKeys {
-		accountKeeper.SetAccount(ctx, authtypes.NewBaseAccountWithAddress(AddrFrom(idx)))
+		baseAcc := authtypes.NewBaseAccountWithAddress(AddrFrom(idx))
+		accI := accountKeeper.NewAccount(ctx, baseAcc)
+		accountKeeper.SetAccount(ctx, accI)
 		err := bankKeeper.SendCoinsFromModuleToAccount(ctx, faucetAccountName, AddrFrom(idx), InitCoins)
 		require.NoError(t, err)
 	}
@@ -244,10 +267,10 @@ func CallCreateValidatorHooks(ctx sdk.Context, k distrkeeper.Keeper, addr sdk.Ac
 
 func CreateValidator(idx int, stake math.Int) (stakingtypes.Validator, error) {
 	val, err := stakingtypes.NewValidator(
-		ValAddrFrom(idx), PubKeys[idx], stakingtypes.Description{Moniker: "TestValidator"},
+		ValAddrFrom(idx).String(), PubKeys[idx], stakingtypes.Description{Moniker: "TestValidator"},
 	)
 	val.Tokens = stake
-	val.DelegatorShares = sdk.NewDec(val.Tokens.Int64())
+	val.DelegatorShares = sdkmath.LegacyNewDec(val.Tokens.Int64())
 	return val, err
 }
 

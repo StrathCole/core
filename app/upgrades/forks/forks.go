@@ -3,6 +3,7 @@ package forks
 import (
 	"fmt"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/classic-terra/core/v3/app/keepers"
 	core "github.com/classic-terra/core/v3/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,7 +16,7 @@ func runForkLogicSwapDisable(ctx sdk.Context, keppers *keepers.AppKeepers, _ *mo
 	if ctx.ChainID() == core.ColumbusChainID {
 		// Make min spread to 100% to disable swap
 		params := keppers.MarketKeeper.GetParams(ctx)
-		params.MinStabilitySpread = sdk.OneDec()
+		params.MinStabilitySpread = sdkmath.LegacyOneDec()
 		keppers.MarketKeeper.SetParams(ctx, params)
 
 		// Disable IBC Channels

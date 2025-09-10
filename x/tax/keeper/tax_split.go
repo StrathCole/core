@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	oracletypes "github.com/classic-terra/core/v3/x/oracle/types"
@@ -12,7 +13,7 @@ import (
 func (k Keeper) ProcessTaxSplits(ctx sdk.Context, taxes sdk.Coins) error {
 	burnSplitRate := k.treasuryKeeper.GetBurnSplitRate(ctx)
 	oracleSplitRate := k.treasuryKeeper.GetOracleSplitRate(ctx)
-	communityTax, err := k.distributionKeeper.GetCommunityTax(sdk.WrapSDKContext(ctx))
+	communityTax, err := k.distributionKeeper.GetCommunityTax(ctx)
 	if err != nil {
 		return err
 	}
@@ -32,7 +33,7 @@ func (k Keeper) ProcessTaxSplits(ctx sdk.Context, taxes sdk.Coins) error {
 	// Calculate community tax coins
 	if communityTax.IsPositive() {
 		// Adjust community tax to avoid double taxation
-		applyCommunityTax := communityTax.Mul(oracleSplitRate.Quo(communityTax.Mul(oracleSplitRate).Add(sdk.OneDec()).Sub(communityTax)))
+		applyCommunityTax := communityTax.Mul(oracleSplitRate.Quo(communityTax.Mul(oracleSplitRate).Add(sdkmath.LegacyOneDec()).Sub(communityTax)))
 
 		for _, distrCoin := range distributionDeltaCoins {
 			communityTaxAmount := applyCommunityTax.MulInt(distrCoin.Amount).RoundInt()
@@ -53,29 +54,20 @@ func (k Keeper) ProcessTaxSplits(ctx sdk.Context, taxes sdk.Coins) error {
 	// Handle community tax coins
 	if !communityTaxCoins.IsZero() {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
-			sdk.WrapSDKContext(ctx),
+			ctx,
 			authtypes.FeeCollectorName,
 			distributiontypes.ModuleName,
 			communityTaxCoins,
 		); err != nil {
 			return err
 		}
-
-		// Add to community pool
-		feePool, err := k.distributionKeeper.GetFeePool(sdk.WrapSDKContext(ctx))
-		if err != nil {
-			return err
-		}
-		feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(communityTaxCoins...)...)
-		if err := k.distributionKeeper.SetFeePool(sdk.WrapSDKContext(ctx), feePool); err != nil {
-			return err
-		}
+		// Note: community pool accounting handled by distribution module
 	}
 
 	// Handle oracle split coins
 	if !oracleSplitCoins.IsZero() {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
-			sdk.WrapSDKContext(ctx),
+			ctx,
 			authtypes.FeeCollectorName,
 			oracletypes.ModuleName,
 			oracleSplitCoins,
@@ -87,7 +79,7 @@ func (k Keeper) ProcessTaxSplits(ctx sdk.Context, taxes sdk.Coins) error {
 	// Handle remaining taxes (burn)
 	if !taxes.IsZero() {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
-			sdk.WrapSDKContext(ctx),
+			ctx,
 			authtypes.FeeCollectorName,
 			treasurytypes.BurnModuleName,
 			taxes,

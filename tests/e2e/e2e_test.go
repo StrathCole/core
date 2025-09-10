@@ -35,7 +35,7 @@ func (s *IntegrationTestSuite) TestIBCWasmHooks() {
 	s.Len(contracts, 1, "Wrong number of contracts for the counter")
 	contractAddr := contracts[0]
 
-	transferAmount := sdk.NewInt(10000000)
+	transferAmount := sdkmath.NewInt(10000000)
 	validatorAddr := nodeB.GetWallet(initialization.ValidatorWalletName)
 	nodeB.SendIBCTransfer(validatorAddr, contractAddr, fmt.Sprintf("%duluna", transferAmount.Int64()),
 		fmt.Sprintf(`{"wasm":{"contract":"%s","msg": {"increment": {}} }}`, contractAddr))
@@ -80,7 +80,7 @@ func (s *IntegrationTestSuite) TestIBCWasmHooks() {
 			return false
 		}
 		// check if denom is uluna token ibc
-		return sdk.NewInt(amount).Equal(transferAmount) && denom == initialization.TerraIBCDenom && count == 1
+		return sdkmath.NewInt(amount).Equal(transferAmount) && denom == initialization.TerraIBCDenom && count == 1
 	},
 		10*time.Second,
 		10*time.Millisecond,
@@ -173,7 +173,7 @@ func (s *IntegrationTestSuite) TestFeeTax() {
 	newValidatorBalance, err = node.QuerySpecificBalance(validatorAddr, initialization.TerraDenom)
 	s.Require().NoError(err)
 
-	totalTransferAmount := transferAmount1.Mul(sdk.NewInt(2))
+	totalTransferAmount := transferAmount1.Mul(sdkmath.NewInt(2))
 	subAmount = totalTransferAmount.Add(initialization.BurnTaxRate.MulInt(totalTransferAmount).TruncateInt())
 	s.Require().Equal(newValidatorBalance, validatorBalance.Sub(sdk.NewCoin(initialization.TerraDenom, subAmount)))
 }
@@ -215,7 +215,7 @@ func (s *IntegrationTestSuite) TestFeeTaxWasm() {
 	testAddr := node.CreateWallet("test")
 	transferAmount := sdkmath.NewInt(100000000)
 	transferCoin := sdk.NewCoin(initialization.TerraDenom, transferAmount)
-	node.BankSend(fmt.Sprintf("%suluna", transferAmount.Mul(sdk.NewInt(4))), initialization.ValidatorWalletName, testAddr)
+	node.BankSend(fmt.Sprintf("%suluna", transferAmount.Mul(sdkmath.NewInt(4))), initialization.ValidatorWalletName, testAddr)
 	node.StoreWasmCode("counter.wasm", initialization.ValidatorWalletName)
 	chain.LatestCodeID = int(node.QueryLatestWasmCodeID())
 	// instantiate contract and transfer 100000000uluna
@@ -232,9 +232,9 @@ func (s *IntegrationTestSuite) TestFeeTaxWasm() {
 	s.Require().NoError(err)
 	// 400000000 - 100000000 - 100000000 * TaxRate = 300000000 - 10000000 * TaxRate
 	// taxAmount := initialization.BurnTaxRate.MulInt(transferAmount).TruncateInt()
-	// s.Require().Equal(balance1.Amount, transferAmount.Mul(sdk.NewInt(3)).Sub(taxAmount))
+	// s.Require().Equal(balance1.Amount, transferAmount.Mul(sdkmath.NewInt(3)).Sub(taxAmount))
 	// no longer taxed
-	s.Require().Equal(balance1.Amount, transferAmount.Mul(sdk.NewInt(3)))
+	s.Require().Equal(balance1.Amount, transferAmount.Mul(sdkmath.NewInt(3)))
 
 	stabilityFee := sdk.NewDecWithPrec(2, 2).MulInt(transferAmount)
 

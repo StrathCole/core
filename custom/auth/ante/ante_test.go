@@ -5,9 +5,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	dbm "github.com/cometbft/cometbft-db"
 	"github.com/cometbft/cometbft/libs/log"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -48,11 +47,11 @@ func createTestApp(isCheckTx bool, tempDir string) (*terraapp.TerraApp, sdk.Cont
 		tempDir, terraapp.MakeEncodingConfig(),
 		simtestutil.EmptyAppOptions{}, wasmOpts,
 	)
-	ctx := app.BaseApp.NewContext(isCheckTx, tmproto.Header{})
-	app.AccountKeeper.SetParams(ctx, authtypes.DefaultParams())
+	ctx := app.BaseApp.NewContext(isCheckTx)
+	app.AccountKeeper.Params.Set(ctx, authtypes.DefaultParams())
 	app.TreasuryKeeper.SetParams(ctx, treasurytypes.DefaultParams())
-	app.DistrKeeper.SetParams(ctx, distributiontypes.DefaultParams())
-	app.DistrKeeper.SetFeePool(ctx, distributiontypes.InitialFeePool())
+	app.DistrKeeper.Params.Set(ctx, distributiontypes.DefaultParams())
+	app.DistrKeeper.FeePool.Set(ctx, distributiontypes.InitialFeePool())
 
 	taxParams := taxtypes.DefaultParams()
 	taxParams.GasPrices = sdk.NewDecCoins() // tests normally rely on zero gas price, so we are setting it here and fall back to the normal ctx.MinGasPrices
@@ -91,7 +90,7 @@ func (suite *AnteTestSuite) CreateTestTx(privs []cryptotypes.PrivKey, accNums []
 		sigV2 := signing.SignatureV2{
 			PubKey: priv.PubKey(),
 			Data: &signing.SingleSignatureData{
-				SignMode:  suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(),
+				SignMode:  signing.SignMode(suite.clientCtx.TxConfig.SignModeHandler().DefaultMode()),
 				Signature: nil,
 			},
 			Sequence: accSeqs[i],
@@ -112,8 +111,8 @@ func (suite *AnteTestSuite) CreateTestTx(privs []cryptotypes.PrivKey, accNums []
 			AccountNumber: accNums[i],
 			Sequence:      accSeqs[i],
 		}
-		sigV2, err := tx.SignWithPrivKey(
-			suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(), signerData,
+		sigV2, err := tx.SignWithPrivKey(suite.ctx,
+			signing.SignMode(suite.clientCtx.TxConfig.SignModeHandler().DefaultMode()), signerData,
 			suite.txBuilder, priv, suite.clientCtx.TxConfig, accSeqs[i])
 		if err != nil {
 			return nil, err

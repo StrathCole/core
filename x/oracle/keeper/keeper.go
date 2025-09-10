@@ -365,7 +365,10 @@ func (k Keeper) ValidateFeeder(ctx sdk.Context, feederAddr sdk.AccAddress, valid
 	}
 
 	// Check that the given validator exists
-	if val := k.StakingKeeper.Validator(ctx, validatorAddr); val == nil || !val.IsBonded() {
+	if val, err := k.StakingKeeper.Validator(ctx, validatorAddr); val == nil || !val.IsBonded() || err != nil {
+		if err != nil {
+			return err
+		}
 		return errorsmod.Wrapf(stakingtypes.ErrNoValidatorFound, "validator %s is not active set", validatorAddr.String())
 	}
 

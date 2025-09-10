@@ -10,6 +10,7 @@ import (
 	"github.com/classic-terra/core/v3/x/dyncomm/client/cli"
 	"github.com/classic-terra/core/v3/x/dyncomm/keeper"
 	"github.com/classic-terra/core/v3/x/dyncomm/types"
+	"github.com/classic-terra/core/v3/x/market/simulation"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
@@ -168,10 +169,9 @@ func (AppModule) RandomizedParams(_ *rand.Rand) []simtypes.LegacyParamChange {
 }
 
 // RegisterStoreDecoder registers a decoder for dyncomm module's types
-// Deprecated in SDK 0.50
-// func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
-// 	sdr[types.StoreKey] = simulation.NewDecodeStore(am.cdc)
-// }
+func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
+	sdr[types.StoreKey] = simulation.NewDecodeStore(am.cdc)
+}
 
 // WeightedOperations returns the all the dyncomm module operations with their respective weights.
 func (am AppModule) WeightedOperations(module.SimulationState) []simtypes.WeightedOperation {

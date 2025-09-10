@@ -106,7 +106,7 @@ func (n *NodeConfig) QuerySupplyOf(denom string) (math.Int, error) {
 
 	var supplyResp banktypes.QuerySupplyOfResponse
 	if err := util.Cdc.UnmarshalJSON(bz, &supplyResp); err != nil {
-		return sdk.NewInt(0), err
+		return sdkmath.NewInt(0), err
 	}
 	return supplyResp.Amount.Amount, nil
 }

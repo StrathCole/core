@@ -2,9 +2,11 @@ package helpers
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/classic-terra/core/v3/app"
@@ -15,11 +17,12 @@ import (
 	oracletypes "github.com/classic-terra/core/v3/x/oracle/types"
 	taxtypes "github.com/classic-terra/core/v3/x/tax/types"
 	treasurytypes "github.com/classic-terra/core/v3/x/treasury/types"
-	dbm "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtypes "github.com/cometbft/cometbft/types"
+	dbm "github.com/cosmos/cosmos-db"
+	sdklog "cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
@@ -62,8 +65,9 @@ type KeeperTestHelper struct {
 
 func (s *KeeperTestHelper) Setup(_ *testing.T, chainID string) {
 	s.App = SetupApp(s.T(), chainID)
-	s.Ctx = s.App.BaseApp.NewContext(false, tmproto.Header{Height: 1, ChainID: chainID, Time: time.Now().UTC()})
-	s.CheckCtx = s.App.BaseApp.NewContext(true, tmproto.Header{Height: 1, ChainID: chainID, Time: time.Now().UTC()})
+	header := tmproto.Header{Height: 1, ChainID: chainID, Time: time.Now().UTC()}
+	s.Ctx = sdk.NewContext(s.App.CommitMultiStore(), header, false, sdklog.NewNopLogger())
+	s.CheckCtx = sdk.NewContext(s.App.CommitMultiStore(), header, true, sdklog.NewNopLogger())
 	s.QueryHelper = &baseapp.QueryServiceTestHelper{
 		GRPCQueryRouter: s.App.GRPCQueryRouter(),
 		Ctx:             s.Ctx,
@@ -103,6 +107,11 @@ func (EmptyAppOptions) Get(_ string) interface{} { return nil }
 func SetupApp(t *testing.T, chainID string) *app.TerraApp {
 	t.Helper()
 
+	// Ensure Terra bech32 prefixes are set before keepers initialize address codecs
+	sdk.GetConfig().SetBech32PrefixForAccount(core.Bech32PrefixAccAddr, core.Bech32PrefixAccPub)
+	sdk.GetConfig().SetBech32PrefixForValidator(core.Bech32PrefixValAddr, core.Bech32PrefixValPub)
+	sdk.GetConfig().SetBech32PrefixForConsensusNode(core.Bech32PrefixConsAddr, core.Bech32PrefixConsPub)
+
 	privVal := NewPV()
 	pubKey, err := privVal.GetPubKey()
 	require.NoError(t, err)
@@ -115,7 +124,7 @@ func SetupApp(t *testing.T, chainID string) *app.TerraApp {
 	acc := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
 	balance := banktypes.Balance{
 		Address: acc.GetAddress().String(),
-		Coins:   sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, sdk.NewInt(100000000000000))),
+		Coins:   sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, sdkmath.NewInt(100000000000000))),
 	}
 	genesisAccounts := []authtypes.GenesisAccount{acc}
 	app := SetupWithGenesisValSet(t, chainID, valSet, genesisAccounts, balance)
@@ -138,7 +147,7 @@ func SetupWithGenesisValSet(t *testing.T, chainID string, valSet *tmtypes.Valida
 
 	// init chain will set the validator set and initialize the genesis accounts
 	terraApp.InitChain(
-		abci.RequestInitChain{
+		&abci.RequestInitChain{
 			ChainId:         chainID,
 			Validators:      []abci.ValidatorUpdate{},
 			ConsensusParams: DefaultConsensusParams,
@@ -146,25 +155,33 @@ func SetupWithGenesisValSet(t *testing.T, chainID string, valSet *tmtypes.Valida
 		},
 	)
 
-	// commit genesis changes
-	terraApp.Commit()
-	terraApp.BeginBlock(abci.RequestBeginBlock{Header: tmproto.Header{
-		ChainID:            chainID,
+	ctx := terraApp.BaseApp.NewContext(false).WithBlockHeader(tmproto.Header{
 		Height:             terraApp.LastBlockHeight() + 1,
 		AppHash:            terraApp.LastCommitID().Hash,
 		ValidatorsHash:     valSet.Hash(),
 		NextValidatorsHash: valSet.Hash(),
-	}})
+	})
+
+	// commit genesis changes
+	terraApp.Commit()
+	terraApp.EndBlocker(ctx)
 
 	return terraApp
 }
 
 func setup(chainID string) (*app.TerraApp, app.GenesisState) {
+
 	db := dbm.NewMemDB()
 	encCdc := app.MakeEncodingConfig()
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[server.FlagInvCheckPeriod] = 5
 	appOptions[server.FlagMinGasPrices] = "0luna"
+
+	// unique temp dir for each test
+	baseDir, err := os.MkdirTemp("", "terrapp")
+	if err != nil {
+		panic(err)
+	}
 
 	terraapp := app.NewTerraApp(
 		log.NewNopLogger(),
@@ -172,7 +189,7 @@ func setup(chainID string) (*app.TerraApp, app.GenesisState) {
 		nil,
 		true,
 		map[int64]bool{},
-		app.DefaultNodeHome,
+		baseDir,
 		encCdc,
 		simtestutil.EmptyAppOptions{},
 		emptyWasmOpts,
@@ -207,16 +224,15 @@ func genesisStateWithValSet(t *testing.T,
 			Jailed:            false,
 			Status:            stakingtypes.Bonded,
 			Tokens:            bondAmt,
-			DelegatorShares:   sdk.OneDec(),
+			DelegatorShares:   sdkmath.LegacyOneDec(),
 			Description:       stakingtypes.Description{},
 			UnbondingHeight:   int64(0),
 			UnbondingTime:     time.Unix(0, 0).UTC(),
-			Commission:        stakingtypes.NewCommission(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
-			MinSelfDelegation: sdk.ZeroInt(),
+			Commission:        stakingtypes.NewCommission(sdkmath.LegacyZeroDec(), sdkmath.LegacyZeroDec(), sdkmath.LegacyZeroDec()),
+			MinSelfDelegation: sdkmath.ZeroInt(),
 		}
 		validators = append(validators, validator)
-		delegations = append(delegations, stakingtypes.NewDelegation(genAccs[0].GetAddress(), val.Address.Bytes(), sdk.OneDec()))
-
+		delegations = append(delegations, stakingtypes.NewDelegation(genAccs[0].GetAddress().String(), sdk.ValAddress(val.Address).String(), sdkmath.LegacyOneDec()))
 	}
 	// set validators and delegations
 	defaultStParams := stakingtypes.DefaultParams()
@@ -287,7 +303,7 @@ func genesisStateWithValSet(t *testing.T,
 
 	// update tax genesis state
 	taxGenesis := taxtypes.DefaultGenesisState()
-	taxGenesis.Params.GasPrices = sdk.NewDecCoins(sdk.NewDecCoin(core.MicroSDRDenom, sdk.ZeroInt())) // tests normally rely on zero gas price, so we are setting it here and fall back to the normal ctx.MinGasPrices
+	taxGenesis.Params.GasPrices = sdk.NewDecCoins(sdk.NewDecCoin(core.MicroSDRDenom, sdkmath.ZeroInt())) // tests normally rely on zero gas price, so we are setting it here and fall back to the normal ctx.MinGasPrices
 	genesisState[taxtypes.ModuleName] = app.AppCodec().MustMarshalJSON(taxGenesis)
 
 	// update wasm genesis state
@@ -317,6 +333,6 @@ func (s *KeeperTestHelper) RandomAccountAddresses(n int) []sdk.AccAddress {
 
 // FundAcc funds target address with specified amount.
 func (s *KeeperTestHelper) FundAcc(acc sdk.AccAddress, amounts sdk.Coins) {
-	err := banktestutil.FundAccount(s.App.BankKeeper, s.Ctx, acc, amounts)
+	err := banktestutil.FundAccount(s.Ctx, s.App.BankKeeper, acc, amounts)
 	s.Require().NoError(err)
 }

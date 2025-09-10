@@ -28,7 +28,10 @@ func (k Keeper) SlashAndResetMissCounters(ctx sdk.Context) {
 
 		// Penalize the validator whose the valid vote rate is smaller than min threshold
 		if validVoteRate.LT(minValidPerWindow) {
-			validator := k.StakingKeeper.Validator(ctx, operator)
+			validator, err := k.StakingKeeper.Validator(ctx, operator)
+			if err != nil {
+				return false
+			}
 			if validator.IsBonded() && !validator.IsJailed() {
 				consAddr, err := validator.GetConsAddr()
 				if err != nil {

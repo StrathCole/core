@@ -18,12 +18,8 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
-	storetypes "cosmossdk.io/store/types"
-	"github.com/cosmos/cosmos-sdk/runtime"
-	"github.com/cosmos/cosmos-sdk/codec/address"
 	sdklog "cosmossdk.io/log"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	storetypes "cosmossdk.io/store/types"
 	evidencekeeper "cosmossdk.io/x/evidence/keeper"
 	evidencetypes "cosmossdk.io/x/evidence/types"
 	"cosmossdk.io/x/feegrant"
@@ -34,6 +30,8 @@ import (
 	taxtypes "github.com/classic-terra/core/v3/x/tax/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/address"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -58,6 +56,8 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 
 	wasm "github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -138,38 +138,42 @@ func NewAppKeepers(
 	wasmOpts []wasmkeeper.Option,
 	appOpts servertypes.AppOptions,
 ) *AppKeepers {
-	keys := sdk.NewKVStoreKeys(
-		crisistypes.StoreKey,
-		authtypes.StoreKey,
-		banktypes.StoreKey,
-		stakingtypes.StoreKey,
-		minttypes.StoreKey,
-		distrtypes.StoreKey,
-		slashingtypes.StoreKey,
-		govtypes.StoreKey,
-		paramstypes.StoreKey,
-		consensusparamtypes.StoreKey,
-		upgradetypes.StoreKey,
-		feegrant.StoreKey,
-		evidencetypes.StoreKey,
-		capabilitytypes.StoreKey,
-		authzkeeper.StoreKey,
-		ibcexported.StoreKey,
-		ibctransfertypes.StoreKey,
-		ibcfeetypes.StoreKey,
-		icacontrollertypes.StoreKey,
-		icahosttypes.StoreKey,
-		ibchookstypes.StoreKey,
-		oracletypes.StoreKey,
-		markettypes.StoreKey,
-		treasurytypes.StoreKey,
-		taxexemptiontypes.StoreKey,
-		wasmtypes.StoreKey,
-		dyncommtypes.StoreKey,
-		taxtypes.StoreKey,
-	)
-	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
-	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+	keys := map[string]*storetypes.KVStoreKey{
+		crisistypes.StoreKey:         storetypes.NewKVStoreKey(crisistypes.StoreKey),
+		authtypes.StoreKey:           storetypes.NewKVStoreKey(authtypes.StoreKey),
+		banktypes.StoreKey:           storetypes.NewKVStoreKey(banktypes.StoreKey),
+		stakingtypes.StoreKey:        storetypes.NewKVStoreKey(stakingtypes.StoreKey),
+		minttypes.StoreKey:           storetypes.NewKVStoreKey(minttypes.StoreKey),
+		distrtypes.StoreKey:          storetypes.NewKVStoreKey(distrtypes.StoreKey),
+		slashingtypes.StoreKey:       storetypes.NewKVStoreKey(slashingtypes.StoreKey),
+		govtypes.StoreKey:            storetypes.NewKVStoreKey(govtypes.StoreKey),
+		paramstypes.StoreKey:         storetypes.NewKVStoreKey(paramstypes.StoreKey),
+		consensusparamtypes.StoreKey: storetypes.NewKVStoreKey(consensusparamtypes.StoreKey),
+		upgradetypes.StoreKey:        storetypes.NewKVStoreKey(upgradetypes.StoreKey),
+		feegrant.StoreKey:            storetypes.NewKVStoreKey(feegrant.StoreKey),
+		evidencetypes.StoreKey:       storetypes.NewKVStoreKey(evidencetypes.StoreKey),
+		capabilitytypes.StoreKey:     storetypes.NewKVStoreKey(capabilitytypes.StoreKey),
+		authzkeeper.StoreKey:         storetypes.NewKVStoreKey(authzkeeper.StoreKey),
+		ibcexported.StoreKey:         storetypes.NewKVStoreKey(ibcexported.StoreKey),
+		ibctransfertypes.StoreKey:    storetypes.NewKVStoreKey(ibctransfertypes.StoreKey),
+		ibcfeetypes.StoreKey:         storetypes.NewKVStoreKey(ibcfeetypes.StoreKey),
+		icacontrollertypes.StoreKey:  storetypes.NewKVStoreKey(icacontrollertypes.StoreKey),
+		icahosttypes.StoreKey:        storetypes.NewKVStoreKey(icahosttypes.StoreKey),
+		ibchookstypes.StoreKey:       storetypes.NewKVStoreKey(ibchookstypes.StoreKey),
+		oracletypes.StoreKey:         storetypes.NewKVStoreKey(oracletypes.StoreKey),
+		markettypes.StoreKey:         storetypes.NewKVStoreKey(markettypes.StoreKey),
+		treasurytypes.StoreKey:       storetypes.NewKVStoreKey(treasurytypes.StoreKey),
+		taxexemptiontypes.StoreKey:   storetypes.NewKVStoreKey(taxexemptiontypes.StoreKey),
+		wasmtypes.StoreKey:           storetypes.NewKVStoreKey(wasmtypes.StoreKey),
+		dyncommtypes.StoreKey:        storetypes.NewKVStoreKey(dyncommtypes.StoreKey),
+		taxtypes.StoreKey:            storetypes.NewKVStoreKey(taxtypes.StoreKey),
+	}
+	tkeys := map[string]*storetypes.TransientStoreKey{
+		paramstypes.TStoreKey: storetypes.NewTransientStoreKey(paramstypes.TStoreKey),
+	}
+	memKeys := map[string]*storetypes.MemoryStoreKey{
+		capabilitytypes.MemStoreKey: storetypes.NewMemoryStoreKey(capabilitytypes.MemStoreKey),
+	}
 
 	appKeepers := &AppKeepers{
 		keys:    keys,
@@ -180,6 +184,7 @@ func NewAppKeepers(
 	// Address codecs (v0.50)
 	accAddrCodec := address.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
 	valAddrCodec := address.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix())
+	valConsAddrCodec := address.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix())
 
 	// init params keeper and subspaces
 	appKeepers.ParamsKeeper = initParamsKeeper(
@@ -244,8 +249,8 @@ func NewAppKeepers(
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		accAddrCodec,
 		valAddrCodec,
+		valConsAddrCodec,
 	)
 	appKeepers.MintKeeper = mintkeeper.NewKeeper(
 		appCodec,
@@ -312,7 +317,7 @@ func NewAppKeepers(
 		appCodec, appKeepers.keys[ibcfeetypes.StoreKey],
 		appKeepers.IBCKeeper.ChannelKeeper, // may be replaced with IBC middleware
 		appKeepers.IBCKeeper.ChannelKeeper,
-		&appKeepers.IBCKeeper.PortKeeper, appKeepers.AccountKeeper, appKeepers.BankKeeper,
+		appKeepers.IBCKeeper.PortKeeper, appKeepers.AccountKeeper, appKeepers.BankKeeper,
 	)
 
 	appKeepers.ICAHostKeeper = icahostkeeper.NewKeeper(
@@ -321,10 +326,11 @@ func NewAppKeepers(
 		appKeepers.GetSubspace(icahosttypes.SubModuleName),
 		appKeepers.IBCFeeKeeper, // use ics29 fee as ics4Wrapper in middleware stack
 		appKeepers.IBCKeeper.ChannelKeeper,
-		&appKeepers.IBCKeeper.PortKeeper,
+		appKeepers.IBCKeeper.PortKeeper,
 		appKeepers.AccountKeeper,
 		scopedICAHostKeeper,
 		bApp.MsgServiceRouter(),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
 	appKeepers.ICAHostKeeper.WithQueryRouter(bApp.GRPCQueryRouter())
@@ -335,9 +341,10 @@ func NewAppKeepers(
 		appKeepers.GetSubspace(icacontrollertypes.SubModuleName),
 		appKeepers.IBCFeeKeeper, // use ics29 fee as ics4Wrapper in middleware stack
 		appKeepers.IBCKeeper.ChannelKeeper,
-		&appKeepers.IBCKeeper.PortKeeper,
+		appKeepers.IBCKeeper.PortKeeper,
 		scopedICAControllerKeeper,
 		bApp.MsgServiceRouter(),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
 	// create evidence keeper with router
@@ -405,10 +412,11 @@ func NewAppKeepers(
 		appKeepers.GetSubspace(ibctransfertypes.ModuleName),
 		appKeepers.IBCFeeKeeper,
 		appKeepers.IBCKeeper.ChannelKeeper,
-		&appKeepers.IBCKeeper.PortKeeper,
+		appKeepers.IBCKeeper.PortKeeper,
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		scopedTransferKeeper,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
 	wasmDir := filepath.Join(homePath, "wasm")
@@ -416,7 +424,7 @@ func NewAppKeepers(
 	if err != nil {
 		panic(err)
 	}
-	
+
 	wasmMsgHandler := customwasmkeeper.NewMessageHandler(
 		bApp.MsgServiceRouter(),
 		appKeepers.IBCFeeKeeper,
@@ -455,15 +463,16 @@ func NewAppKeepers(
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		appKeepers.StakingKeeper,
-		distrkeeper.NewQuerier(appKeepers.DistrKeeper),
-		appKeepers.IBCKeeper.ChannelKeeper, // ICS4Wrapper
-		appKeepers.IBCKeeper.ChannelKeeper, // ChannelKeeper
-		appKeepers.TransferKeeper,          // ICS20TransferPortSource
+		distrkeeper.NewQuerier(appKeepers.DistrKeeper), // DistributionKeeper
+		appKeepers.IBCFeeKeeper,                        // ICS4Wrapper (fee middleware)
+		appKeepers.IBCKeeper.ChannelKeeper,             // ChannelKeeper
+		appKeepers.IBCKeeper.PortKeeper,                // PortKeeper
+		scopedWasmKeeper,                               // CapabilityKeeper
+		appKeepers.TransferKeeper,                      // ICS20TransferPortSource
 		bApp.MsgServiceRouter(),
 		bApp.GRPCQueryRouter(),
 		wasmDir,
 		wasmConfig,
-		wasmtypes.VMConfig{},
 		wasmkeeper.BuiltInCapabilities(),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		wasmOpts...,
@@ -490,7 +499,7 @@ func NewAppKeepers(
 	govKeeper.SetLegacyRouter(govRouter)
 	appKeepers.GovKeeper = *govKeeper.SetHooks(
 		govtypes.NewMultiGovHooks(
-			// register the governance hooks
+		// register the governance hooks
 		),
 	)
 

@@ -26,10 +26,10 @@ func (suite *AnteTestSuite) TestMemoSpamming() {
 	// Set IsCheckTx to true
 	suite.ctx = suite.ctx.WithIsCheckTx(true)
 
-	suite.app.AccountKeeper.SetParams(suite.ctx, authtypes.DefaultParams())
+	suite.app.AccountKeeper.Params.Set(suite.ctx, authtypes.DefaultParams())
 	authParams := suite.app.AccountKeeper.GetParams(suite.ctx)
 	authParams.MaxMemoCharacters = 512
-	suite.app.AccountKeeper.SetParams(suite.ctx, authParams)
+	suite.app.AccountKeeper.Params.Set(suite.ctx, authParams)
 
 	transferCoin := sdk.Coin{}
 	msg := ibctransfertypes.NewMsgTransfer(

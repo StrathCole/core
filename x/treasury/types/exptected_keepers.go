@@ -7,23 +7,21 @@ import (
 	sdkmath "cosmossdk.io/math"
 	oracletypes "github.com/classic-terra/core/v3/x/oracle/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 
 // AccountKeeper expected account keeper
 type AccountKeeper interface {
 	GetModuleAddress(name string) sdk.AccAddress
-	GetModuleAccount(ctx sdk.Context, moduleName string) authtypes.ModuleAccountI
+	GetModuleAccount(ctx context.Context, moduleName string) sdk.ModuleAccountI
 }
 
 // BankKeeper expected bank keeper
 type BankKeeper interface {
-	MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
-	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
-	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule string, recipientModule string, amt sdk.Coins) error
-	GetAllBalances(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
-	GetSupply(ctx sdk.Context, denom string) sdk.Coin
+	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
+	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
+	SendCoinsFromModuleToModule(ctx context.Context, senderModule string, recipientModule string, amt sdk.Coins) error
+	GetAllBalances(ctx context.Context, addr sdk.AccAddress) sdk.Coins
+	GetSupply(ctx context.Context, denom string) sdk.Coin
 }
 
 // MarketKeeper expected market keeper
@@ -34,12 +32,6 @@ type MarketKeeper interface {
 // StakingKeeper expected keeper for staking module
 type StakingKeeper interface {
 	TotalBondedTokens(context.Context) (math.Int, error) // total bonded tokens within the validator set
-}
-
-// DistributionKeeper expected keeper for distribution module
-type DistributionKeeper interface {
-	GetFeePool(ctx sdk.Context) (feePool distrtypes.FeePool)
-	SetFeePool(ctx sdk.Context, feePool distrtypes.FeePool)
 }
 
 // OracleKeeper defines expected oracle keeper
