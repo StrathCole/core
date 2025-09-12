@@ -6,19 +6,24 @@ import (
 	"os"
 	"path/filepath"
 
+	log "cosmossdk.io/log"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
-	log "github.com/cometbft/cometbft/libs/log"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 
 	sdklog "cosmossdk.io/log"
-	store "cosmossdk.io/store"
+	store "// initBasicManager creates a fully initialized BasicManager for CLI commands
+// without requiring full app initialization that would create WASM VM
+func initBasicManager(encodingConfig params.EncodingConfig) module.BasicManager {
+	// Use ModuleBasics which are statically defined basic modules
+	// These don't require keeper initialization and should work for CLI commands
+	return terraapp.ModuleBasics
+}dk.io/store"
 	snapshots "cosmossdk.io/store/snapshots"
 	snapshottypes "cosmossdk.io/store/snapshots/types"
 	storetypes "cosmossdk.io/store/types"
 	tmcfg "github.com/cometbft/cometbft/config"
-	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
@@ -31,7 +36,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtxconfig "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
@@ -81,6 +90,9 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
 
+			// attach command context (SDK 0.50 pattern)
+			initClientCtx = initClientCtx.WithCmdContext(cmd.Context())
+
 			initClientCtx, err := client.ReadPersistentCommandFlags(initClientCtx, cmd.Flags())
 			if err != nil {
 				return err
@@ -89,6 +101,20 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 			initClientCtx, err = config.ReadFromClientConfig(initClientCtx)
 			if err != nil {
 				return err
+			}
+
+			// Enable SIGN_MODE_TEXTUAL when online (SDK 0.50 pattern)
+			if !initClientCtx.Offline {
+				enabledSignModes := append(tx.DefaultSignModes, signing.SignMode_SIGN_MODE_TEXTUAL)
+				txConfigOpts := tx.ConfigOptions{
+					EnabledSignModes:           enabledSignModes,
+					TextualCoinMetadataQueryFn: authtxconfig.NewGRPCCoinMetadataQueryFn(initClientCtx),
+				}
+				txCfg, err := tx.NewTxConfigWithOptions(initClientCtx.Codec, txConfigOpts)
+				if err != nil {
+					return err
+				}
+				initClientCtx = initClientCtx.WithTxConfig(txCfg)
 			}
 
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
@@ -140,7 +166,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		genutilcli.InitCmd(terraapp.ModuleBasics, terraapp.DefaultNodeHome),
 		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, terraapp.DefaultNodeHome, gentxModule.GenTxValidator, addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix())),
 		terralegacy.MigrateGenesisCmd(),
-		genutilcli.GenTxCmd(terraapp.ModuleBasics, txEnc, banktypes.GenesisBalancesIterator{}, terraapp.DefaultNodeHome, addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())),
+		genutilcli.GenTxCmd(terraapp.ModuleBasics, txEnc, banktypes.GenesisBalancesIterator{}, terraapp.DefaultNodeHome, addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix())),
 		genutilcli.ValidateGenesisCmd(terraapp.ModuleBasics),
 		AddGenesisAccountCmd(terraapp.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
@@ -152,11 +178,14 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 	server.AddCommands(rootCmd, terraapp.DefaultNodeHome, appCreatorFn, appExporterFn, addModuleInitFlags)
 
+	// Get BasicManager for CLI commands without full app initialization
+	basicMgr := initBasicManager(encodingConfig)
+
 	// add keybase, auxiliary status, query, and tx child commands
 	rootCmd.AddCommand(
 		server.StatusCommand(),
-		queryCommand(),
-		txCommand(),
+		queryCommand(basicMgr),
+		txCommand(basicMgr),
 		keys.Commands(),
 	)
 }
@@ -166,7 +195,7 @@ func addModuleInitFlags(startCmd *cobra.Command) {
 	wasm.AddModuleInitFlags(startCmd)
 }
 
-func queryCommand() *cobra.Command {
+func queryCommand(basicMgr module.BasicManager) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        "query",
 		Aliases:                    []string{"q"},
@@ -185,13 +214,13 @@ func queryCommand() *cobra.Command {
 		authcustomcli.GetTxFeesEstimateCommand(),
 	)
 
-	terraapp.ModuleBasics.AddQueryCommands(cmd)
+	basicMgr.AddQueryCommands(cmd)
 	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
 
 	return cmd
 }
 
-func txCommand() *cobra.Command {
+func txCommand(basicMgr module.BasicManager) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        "tx",
 		Short:                      "Transactions subcommands",
@@ -213,10 +242,25 @@ func txCommand() *cobra.Command {
 		flags.LineBreak,
 	)
 
+	// Add module transaction commands from module basics
+	basicMgr.AddTxCommands(cmd)
 	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
 
 	return cmd
 }
+
+// initBasicManager creates a fully initialized BasicManager for CLI commands
+// without requiring full app initialization that would create WASM VM
+func initBasicManager(encodingConfig params.EncodingConfig) module.BasicManager {
+	// Use ModuleBasics which are statically defined basic modules
+	// These don't require keeper initialization and should work for CLI commands
+	return terraapp.ModuleBasics
+}
+
+// emptyAppOptions is a minimal AppOptions used for constructing a temporary app for CLI wiring
+type emptyAppOptions struct{}
+
+func (emptyAppOptions) Get(_ string) interface{} { return nil }
 
 type appCreator struct {
 	encodingConfig params.EncodingConfig
@@ -241,16 +285,23 @@ func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, a
 	}
 
 	homeDir := cast.ToString(appOpts.Get(flags.FlagHome))
+	if homeDir == "" {
+		homeDir = terraapp.DefaultNodeHome
+	}
 	chainID := cast.ToString(appOpts.Get(flags.FlagChainID))
 	if chainID == "" {
-		// fallback to genesis chain-id
+		// Try to read chain-id from genesis.json if it exists; otherwise fall back to a safe default
 		genDocFile := filepath.Join(homeDir, "config", "genesis.json")
-		appGenesis, err := tmtypes.GenesisDocFromFile(genDocFile)
-		if err != nil {
-			panic(err)
+		if fi, statErr := os.Stat(genDocFile); statErr == nil && !fi.IsDir() {
+			appGenesis, gErr := genutiltypes.AppGenesisFromFile(genDocFile)
+			if gErr == nil {
+				chainID = appGenesis.ChainID
+			}
 		}
-
-		chainID = appGenesis.ChainID
+		// If still empty (e.g., when running CLI help without an initialized home), use a benign default
+		if chainID == "" {
+			chainID = "terra-local"
+		}
 	}
 
 	snapshotDir := filepath.Join(homeDir, "data", "snapshots")
@@ -258,7 +309,6 @@ func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, a
 	if err != nil {
 		panic(err)
 	}
-
 	snapshotDB, err := dbm.NewDB("metadata", server.GetAppDBBackend(appOpts), snapshotDir)
 	if err != nil {
 		panic(err)
@@ -273,9 +323,9 @@ func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, a
 		cast.ToUint32(appOpts.Get(server.FlagStateSyncSnapshotKeepRecent)),
 	)
 
-	return terraapp.NewTerraApp(
+	app := terraapp.NewTerraApp(
 		logger, db, traceStore, true, skipUpgradeHeights,
-		cast.ToString(appOpts.Get(flags.FlagHome)),
+		homeDir,
 		a.encodingConfig,
 		appOpts,
 		nil,
@@ -288,12 +338,13 @@ func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, a
 		baseapp.SetInterBlockCache(cache),
 		baseapp.SetTrace(cast.ToBool(appOpts.Get(server.FlagTrace))),
 		baseapp.SetIndexEvents(cast.ToStringSlice(appOpts.Get(server.FlagIndexEvents))),
-		baseapp.SetIndexEvents(cast.ToStringSlice(appOpts.Get(server.FlagIndexEvents))),
 		baseapp.SetSnapshot(snapshotStore, snapshotOptions),
 		baseapp.SetIAVLCacheSize(cast.ToInt(appOpts.Get(server.FlagIAVLCacheSize))),
 		baseapp.SetIAVLDisableFastNode(cast.ToBool(appOpts.Get(server.FlagDisableIAVLFastNode))),
 		//baseapp.SetIAVLLazyLoading(cast.ToBool(appOpts.Get(server.FlagIAVLLazyLoading))),
 	)
+
+	return app
 }
 
 func (a appCreator) appExport(
