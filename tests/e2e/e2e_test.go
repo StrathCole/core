@@ -173,8 +173,7 @@ func (s *IntegrationTestSuite) TestFeeTax() {
 	s.Require().NoError(err)
 
 	totalTransferAmount := transferAmount1.Mul(sdkmath.NewInt(2))
-	subAmount = totalTransferAmount.Add(initialization.BurnTaxRate.MulInt(totalTransferAmount).TruncateInt())
-	s.Require().Equal(newValidatorBalance, validatorBalance.Sub(sdk.NewCoin(initialization.TerraDenom, subAmount)))
+	s.Require().Equal(newValidatorBalance, validatorBalance.Sub(sdk.NewCoin(initialization.TerraDenom, totalTransferAmount)))
 }
 
 func (s *IntegrationTestSuite) TestAuthz() {
