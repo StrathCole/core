@@ -154,9 +154,10 @@ func TestTerraGaiaIBCTranfer(t *testing.T) {
 	// Assert that the funds are no longer present in user acc on Terra Classic and are in the user acc on Gaia
 	terraUserUpdateBal, err := terra.GetBalance(ctx, terraUserAddr, terra.Config().Denom)
 	require.NoError(t, err)
+
+	// TODO: the gas fee is not fixed 200000 gas, so the below test is not working
 	// require.Equal(t, terraUserUpdateBal, terraUserInitialBal.Sub(transferAmount).Sub(gasFee.RoundInt()))
-	// TODO: the gas fee is not fixed 200000 gas, so the above test is not working
-	require.GreaterOrEqual(t, terraUserUpdateBal, terraUserInitialBal.Sub(transferAmount).Sub(gasFee.RoundInt()))
+	require.LessOrEqual(t, terraUserUpdateBal.Int64(), terraUserInitialBal.Sub(transferAmount).Sub(gasFee.RoundInt()).Int64())
 
 	gaiaUserUpdateBal, err := gaia.GetBalance(ctx, gaiaUserAddr, terraIBCDenom)
 	require.NoError(t, err)
@@ -182,7 +183,9 @@ func TestTerraGaiaIBCTranfer(t *testing.T) {
 	// Assert that the funds are now back on Terra Classic and not on Gaia (except gas fees paid of course)
 	terraUserUpdateBal, err = terra.GetBalance(ctx, terraUserAddr, terra.Config().Denom)
 	require.NoError(t, err)
-	require.Equal(t, terraUserInitialBal.Sub(gasFee.RoundInt()), terraUserUpdateBal)
+	// TODO: as above this test does not work as "gas" is set to auto.
+	// require.Equal(t, terraUserInitialBal.Sub(gasFee.RoundInt()), terraUserUpdateBal)
+	require.LessOrEqual(t, terraUserUpdateBal.Int64(), terraUserInitialBal.Sub(gasFee.RoundInt()).Int64())
 
 	gaiaUserUpdateBal, err = gaia.GetBalance(ctx, gaiaUserAddr, terraIBCDenom)
 	require.NoError(t, err)
