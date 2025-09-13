@@ -142,8 +142,8 @@ run_upgrade () {
 
     STATUS_INFO=($(./_build/$current_binary/terrad status --home $HOME | jq -r '.NodeInfo.network,.SyncInfo.latest_block_height'))
     UPGRADE_HEIGHT=$((STATUS_INFO[1] + 20))
-    if [ $UPGRADE_HEIGHT -lt 70 ]; then
-        UPGRADE_HEIGHT=70
+    if [ $UPGRADE_HEIGHT -lt 35 ]; then
+        UPGRADE_HEIGHT=35
     fi
 
     # Create the upgrade package for the next binary
@@ -415,7 +415,7 @@ else
                 # Run tests after first upgrade to show historic height query issues
                 echo -e "\n======== RUNNING TESTS AFTER FIRST UPGRADE (EXPECT SOME ERRORS) ========\n"
                 echo "These tests should show errors with historic height queries that will be fixed in the final upgrade"
-                run_final_tests "_build/$NEXT_BINARY/terrad" "70"
+                run_final_tests "_build/$NEXT_BINARY/terrad" "35"
             fi
         fi
     done
@@ -425,4 +425,4 @@ fi
 execute_scripts "$ADDITIONAL_AFTER_SCRIPTS"
 
 # Run final tests after all upgrades
-run_final_tests "_build/new/terrad" "70"
+run_final_tests "_build/new/terrad" "35"
