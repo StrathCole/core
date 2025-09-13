@@ -134,7 +134,8 @@ func (s *IntegrationTestSuite) TestFeeTax() {
 	balanceTest1, err := node.QuerySpecificBalance(test1Addr, initialization.TerraDenom)
 	s.Require().NoError(err)
 
-	s.Require().Equal(balanceTest1.Amount, transferAmount1)
+	taxAmount := initialization.BurnTaxRate.MulInt(transferAmount1).TruncateInt()
+	s.Require().Equal(balanceTest1.Amount, transferAmount1.Sub(taxAmount))
 	s.Require().Equal(newValidatorBalance, decremented)
 
 	// Test 2: try bank send with grant
@@ -200,11 +201,12 @@ func (s *IntegrationTestSuite) TestAuthz() {
 	newValidatorBalance, err := node.QuerySpecificBalance(validatorAddr, initialization.TerraDenom)
 	s.Require().NoError(err)
 
+	taxAmount := initialization.BurnTaxRate.MulInt(transferAmount1).TruncateInt()
 	balanceTest2, err := node.QuerySpecificBalance(test2Addr, initialization.TerraDenom)
 	s.Require().NoError(err)
 
-	s.Require().Equal(transferAmount1, balanceTest2.Amount)
-	s.Require().Equal(validatorBalance.Amount.Sub(transferAmount1).Sub(initialization.BurnTaxRate.MulInt(transferAmount1).TruncateInt()), newValidatorBalance.Amount)
+	s.Require().Equal(transferAmount1.Sub(taxAmount), balanceTest2.Amount)
+	s.Require().Equal(validatorBalance.Amount.Sub(transferAmount1), newValidatorBalance.Amount)
 }
 
 func (s *IntegrationTestSuite) TestFeeTaxWasm() {
@@ -221,7 +223,8 @@ func (s *IntegrationTestSuite) TestFeeTaxWasm() {
 
 	balance0, err := node.QuerySpecificBalance(testAddr, initialization.TerraDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(balance0.Amount, transferAmount.Mul(sdkmath.NewInt(4)))
+	taxAmount := initialization.BurnTaxRate.MulInt(transferAmount).TruncateInt()
+	s.Require().Equal(balance0.Amount, transferAmount.Mul(sdkmath.NewInt(4)).Sub(taxAmount))
 
 	// instantiate contract and transfer 100000000uluna
 	node.InstantiateWasmContract(
@@ -235,11 +238,9 @@ func (s *IntegrationTestSuite) TestFeeTaxWasm() {
 
 	balance1, err := node.QuerySpecificBalance(testAddr, initialization.TerraDenom)
 	s.Require().NoError(err)
-	// 400000000 - 100000000 - 100000000 * TaxRate = 300000000 - 10000000 * TaxRate
-	// taxAmount := initialization.BurnTaxRate.MulInt(transferAmount).TruncateInt()
-	// s.Require().Equal(balance1.Amount, transferAmount.Mul(sdkmath.NewInt(3)).Sub(taxAmount))
-	// no longer taxed
-	s.Require().Equal(balance1.Amount, transferAmount.Mul(sdkmath.NewInt(3)))
+	// 400000000 - (400000000 * TaxRate) - 100000000 = 392000000 - 100000000 = 292000000
+	// not taxed, taxAmount is accounting for the tax from the initial transfer to the wallet
+	s.Require().Equal(balance1.Amount, transferAmount.Mul(sdkmath.NewInt(3)).Sub(taxAmount))
 
 	stabilityFee := sdkmath.LegacyNewDecWithPrec(2, 2).MulInt(transferAmount)
 
