@@ -103,7 +103,7 @@ func addAccount(path, moniker, amountStr string, accAddr sdk.AccAddress, forkHei
 
 	balances := banktypes.Balance{Address: accAddr.String(), Coins: coins.Sort()}
 	genAccount := authtypes.NewBaseAccount(accAddr, nil, 0, 0)
-	// TODO: Make the SDK make it far cleaner to add an account to GenesisState
+
 	genFile := config.GenesisFile()
 	appState, genDoc, err := genutiltypes.GenesisStateFromGenFile(genFile)
 	if err != nil {

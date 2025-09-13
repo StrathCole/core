@@ -480,13 +480,16 @@ func (app *TerraApp) SimulationManager() *module.SimulationManager {
 // This is useful for CLI wiring where module Basic instances must be fully initialized
 // (e.g., with codecs) to construct tx/query commands safely.
 func (app *TerraApp) BasicModuleManager() module.BasicManager {
-	return module.NewBasicManagerFromManager(app.mm, nil)
+    // Use the SDK helper which extracts module basics (with initialized codecs)
+    // from the module manager, ensuring CLI commands from upstream modules are
+    // wired correctly.
+    return module.NewBasicManagerFromManager(app.mm, nil)
 }
 
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
 func (app *TerraApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
-	clientCtx := apiSvr.ClientCtx
+    clientCtx := apiSvr.ClientCtx
 
 	// Register new tx routes from grpc-gateway.
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)

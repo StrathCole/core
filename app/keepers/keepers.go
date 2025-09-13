@@ -17,6 +17,8 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	connectiontypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
 
 	sdklog "cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
@@ -552,10 +554,38 @@ func initParamsKeeper(
 	paramsKeeper.Subspace(slashingtypes.ModuleName).WithKeyTable(slashingtypes.ParamKeyTable())
 	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypesv1.ParamKeyTable())
 	paramsKeeper.Subspace(crisistypes.ModuleName).WithKeyTable(crisistypes.ParamKeyTable())
-	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
-	paramsKeeper.Subspace(ibcexported.ModuleName)
-	paramsKeeper.Subspace(icahosttypes.SubModuleName)
-	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
+    // IBC Transfer legacy params key table (SendEnabled, ReceiveEnabled)
+    {
+        transferSS := paramsKeeper.Subspace(ibctransfertypes.ModuleName)
+        if !transferSS.HasKeyTable() {
+            transferSS.WithKeyTable(ibctransfertypes.ParamKeyTable())
+        }
+    }
+    // IBC core (legacy x/params) subspace: register both client and connection param key tables once
+    // NOTE: calling WithKeyTable twice panics; build a combined key table instead and guard with HasKeyTable
+    {
+        ibcCoreSubspace := paramsKeeper.Subspace(ibcexported.ModuleName)
+        if !ibcCoreSubspace.HasKeyTable() {
+            ibcCoreKT := paramstypes.NewKeyTable()
+            ibcCoreKT = ibcCoreKT.RegisterParamSet(&clienttypes.Params{})
+            ibcCoreKT = ibcCoreKT.RegisterParamSet(&connectiontypes.Params{})
+            ibcCoreSubspace.WithKeyTable(ibcCoreKT)
+        }
+    }
+    // ICA Host legacy params key table
+    {
+        hostSS := paramsKeeper.Subspace(icahosttypes.SubModuleName)
+        if !hostSS.HasKeyTable() {
+            hostSS.WithKeyTable(icahosttypes.ParamKeyTable())
+        }
+    }
+    // ICA Controller legacy params key table
+    {
+        ctrlSS := paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
+        if !ctrlSS.HasKeyTable() {
+            ctrlSS.WithKeyTable(icacontrollertypes.ParamKeyTable())
+        }
+    }
 	paramsKeeper.Subspace(markettypes.ModuleName)
 	paramsKeeper.Subspace(oracletypes.ModuleName)
 	paramsKeeper.Subspace(taxexemptiontypes.ModuleName)

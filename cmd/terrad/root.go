@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 
+	"cosmossdk.io/client/v2/autocli"
 	sdklog "cosmossdk.io/log"
 	store "cosmossdk.io/store"
 	snapshots "cosmossdk.io/store/snapshots"
@@ -26,6 +27,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/pruning"
 	snapshot "github.com/cosmos/cosmos-sdk/client/snapshot"
+	"github.com/cosmos/cosmos-sdk/runtime/services"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
@@ -62,7 +64,6 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	sdkConfig.SetPurpose(core.Purpose)
 	sdkConfig.SetBech32PrefixForAccount(core.Bech32PrefixAccAddr, core.Bech32PrefixAccPub)
 	sdkConfig.SetBech32PrefixForValidator(core.Bech32PrefixValAddr, core.Bech32PrefixValPub)
-	sdkConfig.SetBech32PrefixForConsensusNode(core.Bech32PrefixConsAddr, core.Bech32PrefixConsPub)
 	sdkConfig.SetAddressVerifier(wasmtypes.VerifyAddressLen())
 	sdkConfig.Seal()
 
@@ -145,6 +146,29 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	}
 
 	initRootCmd(rootCmd, encodingConfig, tempApp.BasicModuleManager())
+
+	// Enhance CLI with AutoCLI for modules that don't expose manual GetTxCmd/GetQueryCmd.
+	// This adds missing upstream module commands (e.g., staking, distribution, gov) under query/tx.
+	{
+		sc := encodingConfig.InterfaceRegistry.SigningContext()
+		modOpts := services.ExtractAutoCLIOptions(tempApp.Modules())
+		// Only enhance Query via AutoCLI to avoid conflicting/duplicate TX flags and commands
+		for _, opt := range modOpts {
+			if opt != nil {
+				opt.Tx = nil
+			}
+		}
+		autoOpts := autocli.AppOptions{
+			ModuleOptions:         modOpts,
+			AddressCodec:          sc.AddressCodec(),
+			ValidatorAddressCodec: sc.ValidatorAddressCodec(),
+			ConsensusAddressCodec: addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix()),
+			ClientCtx:             initClientCtx,
+		}
+		if err := autoOpts.EnhanceRootCommand(rootCmd); err != nil {
+			panic(err)
+		}
+	}
 
 	return rootCmd, encodingConfig
 }

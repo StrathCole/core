@@ -82,6 +82,13 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.k))
 	// queryproto.RegisterQueryServer(cfg.QueryServer(), grpc.Querier{Q: module.NewQuerier(am.k)})
 	types.RegisterQueryServer(cfg.QueryServer(), am.k)
+
+	// Register no-op migration from version 1 to 2 (consensus version bump)
+	if err := cfg.RegisterMigration(types.ModuleName, 1, func(ctx sdk.Context) error {
+		return nil
+	}); err != nil {
+		panic(fmt.Sprintf("failed to register migration for x/%s from version 1 to 2: %v", types.ModuleName, err))
+	}
 }
 
 func NewAppModule(cdc codec.Codec, taxKeeper keeper.Keeper) AppModule {

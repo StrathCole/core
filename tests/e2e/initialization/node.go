@@ -16,6 +16,7 @@ import (
 	"github.com/cometbft/cometbft/p2p"
 	"github.com/cometbft/cometbft/privval"
 	tmtypes "github.com/cometbft/cometbft/types"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -24,7 +25,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	srvconfig "github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdktx "github.com/cosmos/cosmos-sdk/types/tx"
 	txsigning "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
@@ -388,8 +388,6 @@ func (n *internalNode) signMsg(msgs ...sdk.Msg) (*sdktx.Tx, error) {
 	txBuilder.SetMemo(fmt.Sprintf("%s@%s:26656", n.nodeKey.ID(), n.moniker))
 	txBuilder.SetFeeAmount(sdk.NewCoins())
 	txBuilder.SetGasLimit(uint64(200000 * len(msgs)))
-
-	// TODO: Find a better way to sign this tx with less code.
 
 	// For SIGN_MODE_DIRECT, calling SetSignatures calls setSignerInfos on
 	// TxBuilder under the hood, and SignerInfos is needed to generate the sign
