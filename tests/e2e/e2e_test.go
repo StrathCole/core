@@ -133,7 +133,8 @@ func (s *IntegrationTestSuite) TestFeeTax() {
 	s.Require().NoError(err)
 
 	taxAmount := initialization.BurnTaxRate.MulInt(transferAmount1).TruncateInt()
-	s.Require().Equal(balanceTest1.Amount, transferAmount1.Sub(taxAmount))
+	receiveAmount1 := transferAmount1.Sub(taxAmount)
+	s.Require().Equal(balanceTest1.Amount, receiveAmount1)
 	s.Require().Equal(newValidatorBalance, decremented)
 
 	// Test 2: try bank send with grant
@@ -142,6 +143,7 @@ func (s *IntegrationTestSuite) TestFeeTax() {
 	transferAmount2 := sdkmath.NewInt(10000000)
 	transferCoin2 := sdk.NewCoin(initialization.TerraDenom, transferAmount2)
 
+	receiveAmount2 := transferAmount2.Sub(initialization.BurnTaxRate.MulInt(transferAmount2).TruncateInt())
 	node.BankSend(transferCoin2.String(), validatorAddr, test2Addr)
 	node.GrantAddress(test2Addr, test1Addr, transferCoin2.String(), "test2")
 
@@ -159,9 +161,10 @@ func (s *IntegrationTestSuite) TestFeeTax() {
 	balanceTest2, err := node.QuerySpecificBalance(test2Addr, initialization.TerraDenom)
 	s.Require().NoError(err)
 
-	s.Require().Equal(balanceTest1.Amount, transferAmount1.Sub(transferAmount2))
-	s.Require().Equal(newValidatorBalance, validatorBalance.Add(transferCoin2))
-	s.Require().Equal(balanceTest2.Amount, transferAmount2.Sub(initialization.BurnTaxRate.MulInt(transferAmount2).TruncateInt()))
+	s.Require().Equal(balanceTest1.Amount, receiveAmount1.Sub(transferAmount2))
+	taxAmount2 := initialization.BurnTaxRate.MulInt(transferAmount2).TruncateInt()
+	s.Require().Equal(newValidatorBalance, validatorBalance.Add(transferCoin2).Sub(sdk.NewCoin(initialization.TerraDenom, taxAmount2)))
+	s.Require().Equal(balanceTest2.Amount, receiveAmount2)
 
 	// Test 3: banktypes.MsgMultiSend
 	validatorBalance, err = node.QuerySpecificBalance(validatorAddr, initialization.TerraDenom)
@@ -174,6 +177,17 @@ func (s *IntegrationTestSuite) TestFeeTax() {
 
 	totalTransferAmount := transferAmount1.Mul(sdkmath.NewInt(2))
 	s.Require().Equal(newValidatorBalance, validatorBalance.Sub(sdk.NewCoin(initialization.TerraDenom, totalTransferAmount)))
+
+	taxAmount = initialization.BurnTaxRate.MulInt(transferAmount1).TruncateInt()
+	balanceTest1, err = node.QuerySpecificBalance(test1Addr, initialization.TerraDenom)
+	s.Require().NoError(err)
+	receiveAmount1 = transferAmount1.Sub(taxAmount)
+	s.Require().Equal(balanceTest1.Amount, receiveAmount1)
+
+	balanceTest2, err = node.QuerySpecificBalance(test2Addr, initialization.TerraDenom)
+	s.Require().NoError(err)
+	receiveAmount2 = transferAmount1.Sub(taxAmount)
+	s.Require().Equal(balanceTest2.Amount, receiveAmount2)
 }
 
 func (s *IntegrationTestSuite) TestAuthz() {
