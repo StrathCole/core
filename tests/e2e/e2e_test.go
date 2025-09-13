@@ -218,6 +218,11 @@ func (s *IntegrationTestSuite) TestFeeTaxWasm() {
 	node.BankSend(fmt.Sprintf("%suluna", transferAmount.Mul(sdkmath.NewInt(4))), initialization.ValidatorWalletName, testAddr)
 	node.StoreWasmCode("counter.wasm", initialization.ValidatorWalletName)
 	chain.LatestCodeID = int(node.QueryLatestWasmCodeID())
+
+	balance0, err := node.QuerySpecificBalance(testAddr, initialization.TerraDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(balance0.Amount, transferAmount.Mul(sdkmath.NewInt(4)))
+
 	// instantiate contract and transfer 100000000uluna
 	node.InstantiateWasmContract(
 		strconv.Itoa(chain.LatestCodeID),

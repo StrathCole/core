@@ -24,8 +24,9 @@ import (
 )
 
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ module.AppModule           = AppModule{}
+	_ module.AppModuleBasic      = AppModuleBasic{}
+	_ module.AppModuleSimulation = AppModule{}
 )
 
 type AppModuleBasic struct {
@@ -142,6 +143,10 @@ func (AppModule) IsAppModule() {}
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType marker.
 func (AppModule) IsOnePerModuleType() {}
+
+func (AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
+	return nil
+}
 
 // BeginBlock performs TODO.
 // BeginBlock deprecated in v0.50
