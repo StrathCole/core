@@ -295,7 +295,6 @@ require (
 replace (
 	github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.22.2
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/vedhavyas/go-subkey => github.com/strangelove-ventures/go-subkey v1.0.7
 )
 
 replace (
