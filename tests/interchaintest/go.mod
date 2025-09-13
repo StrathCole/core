@@ -40,7 +40,7 @@ require (
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.2 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
-	github.com/ChainSafe/go-schnorrkel v1.1.0 // indirect
+	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d // indirect
 	github.com/ChainSafe/go-schnorrkel/1 v0.0.0-00010101000000-000000000000 // indirect
 	github.com/ComposableFi/go-subkey/v2 v2.0.0-tm03420 // indirect
 	github.com/DataDog/datadog-go v4.8.3+incompatible // indirect
@@ -306,9 +306,11 @@ replace (
 )
 
 replace (
-	github.com/ChainSafe/go-schnorrkel/1 => github.com/ChainSafe/go-schnorrkel v1.0.0
-	// replace interchaintest and go-substrate-rpc-client to avoid github.com/ChainSafe/go-schnorrkel/1
-	github.com/ComposableFi/go-substrate-rpc-client/v4 => github.com/Genuine-labs/go-substrate-rpc-client/v4 v4.0.0-terra47.1
-	// github.com/strangelove-ventures/interchaintest/v8 => github.com/Genuine-labs/interchaintest/v8 v7.0.0-terra.1
+	github.com/ComposableFi/go-subkey/v2 => github.com/ComposableFi/go-subkey/v2 v2.0.0-tm03420
+	//github.com/ComposableFi/go-substrate-rpc-client/v4 => github.com/Genuine-labs/go-substrate-rpc-client/v4 v4.0.0-terra47.1
 	golang.org/x/exp => golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
 )
+
+replace github.com/ChainSafe/go-schnorrkel/1 => github.com/ChainSafe/go-schnorrkel v1.0.0
+
+replace github.com/ChainSafe/go-schnorrkel v1.1.0 => github.com/ChainSafe/go-schnorrkel v1.0.0
