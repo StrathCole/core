@@ -46,7 +46,7 @@ func createConfig() (ibc.ChainConfig, error) {
 			Bech32Prefix:        "terra",
 			Denom:               "uluna",
 			GasPrices:           "28.325uluna",
-			GasAdjustment:       1.1,
+			GasAdjustment:       2.5,
 			TrustingPeriod:      "112h",
 			NoHostMount:         false,
 			ModifyGenesis:       ModifyGenesis(),

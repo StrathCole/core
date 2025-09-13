@@ -29,6 +29,7 @@ func TestTerraGaiaIBCTranfer(t *testing.T) {
 	// Create chain factory with Terra Classic
 	numVals := 3
 	numFullNodes := 3
+	taxRate := sdkmath.LegacyNewDecWithPrec(2, 2)
 
 	client, network := interchaintest.DockerSetup(t)
 
@@ -100,6 +101,8 @@ func TestTerraGaiaIBCTranfer(t *testing.T) {
 	)
 
 	// Create and Fund User Wallets
+	taxAmount := taxRate.MulInt(sdkmath.NewInt(genesisWalletAmount)).TruncateInt()
+	receivedAmount := sdkmath.NewInt(genesisWalletAmount).Sub(taxAmount)
 	users := interchaintest.GetAndFundTestUsers(t, ctx, "default", sdkmath.NewInt(genesisWalletAmount), terra, gaia)
 	terraUser := users[0]
 	gaiaUser := users[1]
@@ -112,11 +115,11 @@ func TestTerraGaiaIBCTranfer(t *testing.T) {
 
 	terraUserInitialBal, err := terra.GetBalance(ctx, terraUserAddr, terra.Config().Denom)
 	require.NoError(t, err)
-	require.Equal(t, genesisWalletBalance, terraUserInitialBal)
+	require.Equal(t, receivedAmount, terraUserInitialBal)
 
 	gaiaUserInitialBal, err := gaia.GetBalance(ctx, gaiaUserAddr, gaia.Config().Denom)
 	require.NoError(t, err)
-	require.Equal(t, genesisWalletBalance, gaiaUserInitialBal)
+	require.Equal(t, receivedAmount, gaiaUserInitialBal)
 
 	// Compose an IBC transfer and send from Terra Classic -> Gaia
 	transferAmount := math.NewInt(1000)
