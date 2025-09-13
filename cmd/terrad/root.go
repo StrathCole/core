@@ -27,8 +27,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/pruning"
 	snapshot "github.com/cosmos/cosmos-sdk/client/snapshot"
-	"github.com/cosmos/cosmos-sdk/runtime/services"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
+	"github.com/cosmos/cosmos-sdk/runtime/services"
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
@@ -77,6 +77,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	encodingConfig := terraapp.MakeEncodingConfig()
 
 	// Create a temporary app for CLI command setup
+	// this is needed to initialize the app for the CLI command setup
+	// the same method is used in the official wasmd sample app
 	tempApp := terraapp.NewTerraApp(
 		sdklog.NewNopLogger(),
 		dbm.NewMemDB(),
