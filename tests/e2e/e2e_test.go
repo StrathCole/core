@@ -125,9 +125,7 @@ func (s *IntegrationTestSuite) TestFeeTax() {
 	// burn tax with bank send
 	node.BankSend(transferCoin1.String(), validatorAddr, test1Addr)
 
-	subAmount := transferAmount1.Add(initialization.BurnTaxRate.MulInt(transferAmount1).TruncateInt())
-
-	decremented := validatorBalance.Sub(sdk.NewCoin(initialization.TerraDenom, subAmount))
+	decremented := validatorBalance.Sub(sdk.NewCoin(initialization.TerraDenom, transferAmount1))
 	newValidatorBalance, err := node.QuerySpecificBalance(validatorAddr, initialization.TerraDenom)
 	s.Require().NoError(err)
 
@@ -223,7 +221,7 @@ func (s *IntegrationTestSuite) TestFeeTaxWasm() {
 
 	balance0, err := node.QuerySpecificBalance(testAddr, initialization.TerraDenom)
 	s.Require().NoError(err)
-	taxAmount := initialization.BurnTaxRate.MulInt(transferAmount).TruncateInt()
+	taxAmount := initialization.BurnTaxRate.MulInt(transferAmount.Mul(sdkmath.NewInt(4))).TruncateInt()
 	s.Require().Equal(balance0.Amount, transferAmount.Mul(sdkmath.NewInt(4)).Sub(taxAmount))
 
 	// instantiate contract and transfer 100000000uluna
