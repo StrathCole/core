@@ -105,6 +105,8 @@ func (s *IntegrationTestSuite) TestAddBurnTaxExemptionAddress() {
 }
 
 func (s *IntegrationTestSuite) TestFeeTax() {
+	// these tests have been adjusted to account for the reverse charge model
+
 	chain := s.configurer.GetChainConfig(0)
 	node, err := chain.GetDefaultNode()
 	s.Require().NoError(err)
@@ -176,18 +178,17 @@ func (s *IntegrationTestSuite) TestFeeTax() {
 	s.Require().NoError(err)
 
 	totalTransferAmount := transferAmount1.Mul(sdkmath.NewInt(2))
+	taxAmount = initialization.BurnTaxRate.MulInt(transferAmount1).TruncateInt()
+	receiveAmount := transferAmount1.Sub(taxAmount)
 	s.Require().Equal(newValidatorBalance, validatorBalance.Sub(sdk.NewCoin(initialization.TerraDenom, totalTransferAmount)))
 
-	taxAmount = initialization.BurnTaxRate.MulInt(transferAmount1).TruncateInt()
-	balanceTest1, err = node.QuerySpecificBalance(test1Addr, initialization.TerraDenom)
+	balanceTest1New, err := node.QuerySpecificBalance(test1Addr, initialization.TerraDenom)
 	s.Require().NoError(err)
-	receiveAmount1 = transferAmount1.Sub(taxAmount)
-	s.Require().Equal(balanceTest1.Amount, receiveAmount1)
+	s.Require().Equal(balanceTest1New.Amount, balanceTest1.Amount.Add(receiveAmount))
 
-	balanceTest2, err = node.QuerySpecificBalance(test2Addr, initialization.TerraDenom)
+	balanceTest2New, err := node.QuerySpecificBalance(test2Addr, initialization.TerraDenom)
 	s.Require().NoError(err)
-	receiveAmount2 = transferAmount1.Sub(taxAmount)
-	s.Require().Equal(balanceTest2.Amount, receiveAmount2)
+	s.Require().Equal(balanceTest2New.Amount, balanceTest2.Amount.Add(receiveAmount))
 }
 
 func (s *IntegrationTestSuite) TestAuthz() {
