@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 ARG source=./
-ARG GO_VERSION="1.22.12"
+ARG GO_VERSION="1.24.7"
 ARG BUILDPLATFORM=linux/amd64
 
 # Get Go installation from the official image

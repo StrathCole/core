@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 
 ARG source=./
-ARG GO_VERSION="1.22.12"
+ARG GO_VERSION="1.24.7"
 ARG BUILDPLATFORM=linux/amd64
-ARG BASE_IMAGE="golang:${GO_VERSION}-alpine3.20"
+ARG BASE_IMAGE="golang:${GO_VERSION}-alpine3.22"
 FROM --platform=${BUILDPLATFORM} ${BASE_IMAGE} as base
 
 ###############################################################################
@@ -52,21 +52,26 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # Cosmwasm - Download correct libwasmvm version and verify checksum
 RUN set -eux &&\
-    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm | cut -d ' ' -f 2) && \
+    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v2 | cut -d ' ' -f 2) && \
     WASMVM_DOWNLOADS="https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}"; \
     wget ${WASMVM_DOWNLOADS}/checksums.txt -O /tmp/checksums.txt; \
     if [ ${BUILDPLATFORM} = "linux/amd64" ]; then \
         WASMVM_URL="${WASMVM_DOWNLOADS}/libwasmvm_muslc.x86_64.a"; \
+        LIB_NAME="libwasmvm_muslc.x86_64.a"; \
     elif [ ${BUILDPLATFORM} = "linux/arm64" ]; then \
-        WASMVM_URL="${WASMVM_DOWNLOADS}/libwasmvm_muslc.aarch64.a"; \      
+        WASMVM_URL="${WASMVM_DOWNLOADS}/libwasmvm_muslc.aarch64.a"; \
+        LIB_NAME="libwasmvm_muslc.aarch64.a"; \
     else \
         echo "Unsupported Build Platfrom ${BUILDPLATFORM}"; \
         exit 1; \
     fi; \
-    wget ${WASMVM_URL} -O /lib/libwasmvm_muslc.a; \
-    CHECKSUM=`sha256sum /lib/libwasmvm_muslc.a | cut -d" " -f1`; \
+    wget ${WASMVM_URL} -O /tmp/${LIB_NAME}; \
+    CHECKSUM=`sha256sum /tmp/${LIB_NAME} | cut -d" " -f1`; \
     grep ${CHECKSUM} /tmp/checksums.txt; \
-    rm /tmp/checksums.txt
+    rm /tmp/checksums.txt; \
+    mkdir -p /go/pkg/mod/github.com/!cosm!wasm/wasmvm/v2@${WASMVM_VERSION}/internal/api/; \
+    cp /tmp/${LIB_NAME} /go/pkg/mod/github.com/!cosm!wasm/wasmvm/v2@${WASMVM_VERSION}/internal/api/; \
+    rm /tmp/${LIB_NAME}
 
 ###############################################################################
 

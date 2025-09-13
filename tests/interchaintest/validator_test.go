@@ -11,10 +11,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
-	"github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v7/testreporter"
-	"github.com/strangelove-ventures/interchaintest/v7/testutil"
+	"github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v8/testreporter"
+	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
@@ -97,11 +97,11 @@ func TestValidator(t *testing.T) {
 
 	terraValidators, pubKeys, err := helpers.UnmarshalValidators(*config.EncodingConfig, stdout)
 	require.NoError(t, err)
-	require.Equal(t, len(terraValidators), 5)
+	require.Equal(t, len(terraValidators.Validators), 5)
 
 	var val1PubKey cryptotypes.PubKey
 	count := 0
-	for i, val := range terraValidators {
+	for i, val := range terraValidators.Validators {
 		if val.Jailed == true {
 			count++
 			val1PubKey = pubKeys[i]

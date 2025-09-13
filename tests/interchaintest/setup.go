@@ -10,8 +10,8 @@ import (
 	oracle "github.com/classic-terra/core/v3/x/oracle/types"
 	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v7/ibc"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v8/ibc"
 )
 
 var (
@@ -23,7 +23,7 @@ var (
 	TerraClassicImage = ibc.DockerImage{
 		Repository: repo,
 		Version:    version,
-		UidGid:     "1025:1025",
+		UIDGID:     "1025:1025",
 	}
 
 	pathTerraGaia        = "terra-gaia"
