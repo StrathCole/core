@@ -1,6 +1,7 @@
 package staking_test
 
 import (
+	"fmt"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -74,6 +75,6 @@ func (s *StakingTestSuite) TestValidatorVPLimit() {
 	s.App.StakingKeeper.SetDelegation(s.Ctx, stakingtypes.NewDelegation(s.TestAccs[0].String(), valAddrs[0].String(), math.LegacyNewDec(1000000)))
 	_, err = s.App.StakingKeeper.Delegate(s.Ctx, s.TestAccs[0], math.NewInt(1000000), stakingtypes.Unbonded, validators[0], true)
 	// Assert that an error was returned
-	s.Require().Error(err)
+	s.Require().Error(err, fmt.Sprintf("voting power is %v, should be > 20", validators[0].ConsensusPower(s.App.StakingKeeper.PowerReduction(s.Ctx))))
 	s.Require().Equal("validator power is over the allowed limit", err.Error())
 }

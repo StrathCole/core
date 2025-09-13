@@ -7,7 +7,6 @@ import (
 	oracletypes "github.com/classic-terra/core/v3/x/oracle/types"
 	treasurytypes "github.com/classic-terra/core/v3/x/treasury/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 
 func (k Keeper) ProcessTaxSplits(ctx sdk.Context, taxes sdk.Coins) error {
@@ -53,15 +52,13 @@ func (k Keeper) ProcessTaxSplits(ctx sdk.Context, taxes sdk.Coins) error {
 
 	// Handle community tax coins
 	if !communityTaxCoins.IsZero() {
-		if err := k.bankKeeper.SendCoinsFromModuleToModule(
+		if err := k.distributionKeeper.FundCommunityPool(
 			ctx,
-			authtypes.FeeCollectorName,
-			distributiontypes.ModuleName,
 			communityTaxCoins,
+			authtypes.NewModuleAddress(authtypes.FeeCollectorName),
 		); err != nil {
 			return err
 		}
-		// Note: community pool accounting handled by distribution module
 	}
 
 	// Handle oracle split coins

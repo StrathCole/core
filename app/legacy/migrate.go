@@ -21,9 +21,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	captypes "github.com/cosmos/ibc-go/modules/capability/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
+	captypes "github.com/cosmos/ibc-go/modules/capability/types"
 
 	oracletypes "github.com/classic-terra/core/v3/x/oracle/types"
 )

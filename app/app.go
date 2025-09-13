@@ -45,6 +45,8 @@ import (
 	"github.com/classic-terra/core/v3/app/keepers"
 	terraappparams "github.com/classic-terra/core/v3/app/params"
 	customserver "github.com/classic-terra/core/v3/server"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 
 	// upgrades
 	"github.com/classic-terra/core/v3/app/upgrades"
@@ -68,6 +70,7 @@ import (
 	v11_1 "github.com/classic-terra/core/v3/app/upgrades/v11_1"
 	v12 "github.com/classic-terra/core/v3/app/upgrades/v12"
 	v13 "github.com/classic-terra/core/v3/app/upgrades/v13"
+	v14 "github.com/classic-terra/core/v3/app/upgrades/v14"
 
 	customante "github.com/classic-terra/core/v3/custom/auth/ante"
 	custompost "github.com/classic-terra/core/v3/custom/auth/post"
@@ -120,6 +123,7 @@ var (
 		v11_2.Upgrade,
 		v12.Upgrade,
 		v13.Upgrade,
+		v14.Upgrade,
 	}
 
 	// Forks defines forks to be applied to the network
@@ -167,7 +171,7 @@ func init() {
 
 // NewTerraApp returns a reference to an initialized TerraApp.
 func NewTerraApp(
-	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
+	logger sdklog.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, encodingConfig terraappparams.EncodingConfig, appOpts servertypes.AppOptions,
 	wasmOpts []wasmkeeper.Option, baseAppOptions ...func(*baseapp.BaseApp),
 ) *TerraApp {
@@ -200,7 +204,7 @@ func NewTerraApp(
 	})
 
 	// adapt CometBFT logger to cosmossdk.io/log.Logger expected by BaseApp
-	bApp := baseapp.NewBaseApp(appName, tmToSdkLogger{tm: logger}, db, txConfig.TxDecoder(), baseAppOptions...)
+	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 
@@ -252,6 +256,7 @@ func NewTerraApp(
 	// can do so safely.
 	// NOTE: Treasury must occur after bank module so that initial supply is properly set
 	app.mm.SetOrderInitGenesis(orderInitGenesis()...)
+	app.mm.SetOrderExportGenesis(orderInitGenesis()...)
 
 	// NOTE: PreBlocker is supported in SDK v0.50; if needed, enable via BaseApp.SetPreBlocker.
 
@@ -270,15 +275,19 @@ func NewTerraApp(
 	app.sm.RegisterStoreDecoders()
 
 	// initialize stores
-	app.MountKVStores(app.GetKVStoreKey())
+	storeKeys := app.GetKVStoreKey()
+	app.MountKVStores(storeKeys)
 	app.MountTransientStores(app.GetTransientStoreKey())
 	app.MountMemoryStores(app.GetMemoryStoreKey())
 
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
+	// In v0.50, modules like x/upgrade must run in PreBlock to update consensus params
+	// Ensure PreBlocker is registered so module PreBlock ordering executes.
+	app.SetPreBlocker(app.PreBlocker)
 
-	wasmConfig, err := wasm.ReadWasmConfig(appOpts)
+	wasmConfig, err := wasm.ReadNodeConfig(appOpts)
 	if err != nil {
 		panic("error while reading wasm config: " + err.Error())
 	}
@@ -343,6 +352,21 @@ func NewTerraApp(
 			tmos.Exit(err.Error())
 		}
 
+		{
+			/* TODO: check if there is a better way to make sure the client params are set
+			this is a workaround for the fact that the client params are not set in the
+			genesis and the upgrade handler is not enough */
+			// Create a writeable context outside block processing
+			ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
+
+			// Raw-store check avoids calling GetParams() (which panics if missing)
+			store := ctx.KVStore(app.GetKey(ibcexported.StoreKey))
+			if !store.Has([]byte(clienttypes.ParamsKey)) {
+				app.IBCKeeper.ClientKeeper.SetParams(ctx, clienttypes.DefaultParams())
+				// no explicit commit needed; BaseApp will persist on next commit
+			}
+		}
+
 		ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
 		// Initialize pinned codes in wasmvm as they are not persisted there
 		if err := app.WasmKeeper.InitializePinnedCodes(ctx); err != nil {
@@ -358,7 +382,11 @@ func (app *TerraApp) Name() string { return app.BaseApp.Name() }
 
 // DefaultGenesis returns a default genesis from the registered AppModuleBasic's.
 func (app *TerraApp) DefaultGenesis() map[string]json.RawMessage {
-	return ModuleBasics.DefaultGenesis(app.appCodec)
+	return app.BasicModuleManager().DefaultGenesis(app.appCodec)
+}
+
+func (app *TerraApp) Modules() map[string]interface{} {
+	return app.mm.Modules
 }
 
 // BeginBlocker application updates every begin block
@@ -385,6 +413,7 @@ func (app *TerraApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*
 		panic(err)
 	}
 	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
+	ctx.Logger().Debug("init genesis", "genesisState", genesisState)
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
@@ -447,6 +476,13 @@ func (app *TerraApp) SimulationManager() *module.SimulationManager {
 	return app.sm
 }
 
+// BasicModuleManager returns a BasicManager derived from the app's module manager.
+// This is useful for CLI wiring where module Basic instances must be fully initialized
+// (e.g., with codecs) to construct tx/query commands safely.
+func (app *TerraApp) BasicModuleManager() module.BasicManager {
+	return module.NewBasicManagerFromManager(app.mm, nil)
+}
+
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
 func (app *TerraApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
@@ -458,8 +494,8 @@ func (app *TerraApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIC
 	customauthtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 	// Register new CometBFT queries routes from grpc-gateway.
 	cmtservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
-	// Register legacy and grpc-gateway routes for all modules.
-	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	// Register grpc-gateway routes for all modules via BasicModuleManager (SDK v0.50 style)
+	app.BasicModuleManager().RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// register swagger API from root so that other applications can override easily
 	if apiConfig.Swagger {
@@ -478,11 +514,12 @@ func (app *TerraApp) RegisterTxService(clientCtx client.Context) {
 
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
 func (app *TerraApp) RegisterTendermintService(clientCtx client.Context) {
+	cmtApp := server.NewCometABCIWrapper(app)
 	cmtservice.RegisterTendermintService(
 		clientCtx,
 		app.BaseApp.GRPCQueryRouter(),
 		app.interfaceRegistry,
-		app.Query,
+		cmtApp.Query,
 	)
 }
 

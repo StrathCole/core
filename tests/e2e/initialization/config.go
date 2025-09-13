@@ -8,6 +8,7 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 	tmjson "github.com/cometbft/cometbft/libs/json"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -270,6 +271,29 @@ func initGenesis(chain *internalChain, forkHeight int) error {
 	}
 
 	genDoc.AppState = bz
+
+	// Set consensus parameters for SDK 0.50 compatibility
+	if genDoc.Consensus == nil {
+		consensusParams := &tmtypes.ConsensusParams{
+			Block: tmtypes.BlockParams{
+				MaxBytes: 200000,
+				MaxGas:   2000000,
+			},
+			Evidence: tmtypes.EvidenceParams{
+				MaxAgeNumBlocks: 302400,
+				MaxAgeDuration:  504 * time.Hour, // 3 weeks is the max duration
+				MaxBytes:        10000,
+			},
+			Validator: tmtypes.ValidatorParams{
+				PubKeyTypes: []string{
+					tmtypes.ABCIPubKeyTypeEd25519,
+				},
+			},
+		}
+		genDoc.Consensus = &genutiltypes.ConsensusGenesis{
+			Params: consensusParams,
+		}
+	}
 
 	genesisJSON, err := tmjson.MarshalIndent(genDoc, "", "  ")
 	if err != nil {

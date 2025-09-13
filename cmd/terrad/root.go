@@ -13,13 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	sdklog "cosmossdk.io/log"
-	store "// initBasicManager creates a fully initialized BasicManager for CLI commands
-// without requiring full app initialization that would create WASM VM
-func initBasicManager(encodingConfig params.EncodingConfig) module.BasicManager {
-	// Use ModuleBasics which are statically defined basic modules
-	// These don't require keeper initialization and should work for CLI commands
-	return terraapp.ModuleBasics
-}dk.io/store"
+	store "cosmossdk.io/store"
 	snapshots "cosmossdk.io/store/snapshots"
 	snapshottypes "cosmossdk.io/store/snapshots/types"
 	storetypes "cosmossdk.io/store/types"
@@ -35,6 +29,7 @@ func initBasicManager(encodingConfig params.EncodingConfig) module.BasicManager 
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -61,8 +56,7 @@ func initBasicManager(encodingConfig params.EncodingConfig) module.BasicManager 
 // NewRootCmd creates a new root command for terrad. It is called once in the
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
-	encodingConfig := terraapp.MakeEncodingConfig()
-
+	// Set SDK config FIRST before creating any apps
 	sdkConfig := sdk.GetConfig()
 	sdkConfig.SetCoinType(core.CoinType)
 	sdkConfig.SetPurpose(core.Purpose)
@@ -71,6 +65,28 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	sdkConfig.SetBech32PrefixForConsensusNode(core.Bech32PrefixConsAddr, core.Bech32PrefixConsPub)
 	sdkConfig.SetAddressVerifier(wasmtypes.VerifyAddressLen())
 	sdkConfig.Seal()
+
+	// Create temporary directory for CLI setup
+	tempDir, err := os.MkdirTemp("", "terrad")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	encodingConfig := terraapp.MakeEncodingConfig()
+
+	// Create a temporary app for CLI command setup
+	tempApp := terraapp.NewTerraApp(
+		sdklog.NewNopLogger(),
+		dbm.NewMemDB(),
+		nil,
+		true,
+		map[int64]bool{},
+		tempDir,
+		encodingConfig,
+		simtestutil.EmptyAppOptions{},
+		[]wasm.Option{}, // empty wasm options
+	)
 
 	initClientCtx := client.Context{}.
 		WithCodec(encodingConfig.Marshaler).
@@ -128,7 +144,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		},
 	}
 
-	initRootCmd(rootCmd, encodingConfig)
+	initRootCmd(rootCmd, encodingConfig, tempApp.BasicModuleManager())
 
 	return rootCmd, encodingConfig
 }
@@ -145,7 +161,7 @@ func initTendermintConfig() *tmcfg.Config {
 	return cfg
 }
 
-func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
+func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, basicMgr module.BasicManager) {
 	a := appCreator{encodingConfig}
 
 	gentxModule := terraapp.ModuleBasics[genutiltypes.ModuleName].(genutil.AppModuleBasic)
@@ -163,23 +179,20 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	})
 
 	rootCmd.AddCommand(
-		genutilcli.InitCmd(terraapp.ModuleBasics, terraapp.DefaultNodeHome),
+		genutilcli.InitCmd(basicMgr, terraapp.DefaultNodeHome),
 		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, terraapp.DefaultNodeHome, gentxModule.GenTxValidator, addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix())),
 		terralegacy.MigrateGenesisCmd(),
-		genutilcli.GenTxCmd(terraapp.ModuleBasics, txEnc, banktypes.GenesisBalancesIterator{}, terraapp.DefaultNodeHome, addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix())),
-		genutilcli.ValidateGenesisCmd(terraapp.ModuleBasics),
+		genutilcli.GenTxCmd(basicMgr, txEnc, banktypes.GenesisBalancesIterator{}, terraapp.DefaultNodeHome, addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix())),
+		genutilcli.ValidateGenesisCmd(basicMgr),
 		AddGenesisAccountCmd(terraapp.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
-		testnetCmd(terraapp.ModuleBasics, banktypes.GenesisBalancesIterator{}),
+		testnetCmd(basicMgr, banktypes.GenesisBalancesIterator{}),
 		debug.Cmd(),
 		pruning.Cmd(appCreatorFn, terraapp.DefaultNodeHome),
 		snapshot.Cmd(appCreatorFn),
 	)
 
 	server.AddCommands(rootCmd, terraapp.DefaultNodeHome, appCreatorFn, appExporterFn, addModuleInitFlags)
-
-	// Get BasicManager for CLI commands without full app initialization
-	basicMgr := initBasicManager(encodingConfig)
 
 	// add keybase, auxiliary status, query, and tx child commands
 	rootCmd.AddCommand(
@@ -247,14 +260,6 @@ func txCommand(basicMgr module.BasicManager) *cobra.Command {
 	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
 
 	return cmd
-}
-
-// initBasicManager creates a fully initialized BasicManager for CLI commands
-// without requiring full app initialization that would create WASM VM
-func initBasicManager(encodingConfig params.EncodingConfig) module.BasicManager {
-	// Use ModuleBasics which are statically defined basic modules
-	// These don't require keeper initialization and should work for CLI commands
-	return terraapp.ModuleBasics
 }
 
 // emptyAppOptions is a minimal AppOptions used for constructing a temporary app for CLI wiring

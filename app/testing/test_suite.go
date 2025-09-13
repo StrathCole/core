@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	sdklog "cosmossdk.io/log"
 	sdkmath "cosmossdk.io/math"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
@@ -18,11 +19,9 @@ import (
 	taxtypes "github.com/classic-terra/core/v3/x/tax/types"
 	treasurytypes "github.com/classic-terra/core/v3/x/treasury/types"
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtypes "github.com/cometbft/cometbft/types"
 	dbm "github.com/cosmos/cosmos-db"
-	sdklog "cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
@@ -64,14 +63,56 @@ type KeeperTestHelper struct {
 }
 
 func (s *KeeperTestHelper) Setup(_ *testing.T, chainID string) {
+
 	s.App = SetupApp(s.T(), chainID)
+	// Create context after genesis has been initialized and committed
+	// Height 1 because InitChain and Commit have been called in SetupApp
 	header := tmproto.Header{Height: 1, ChainID: chainID, Time: time.Now().UTC()}
-	s.Ctx = sdk.NewContext(s.App.CommitMultiStore(), header, false, sdklog.NewNopLogger())
-	s.CheckCtx = sdk.NewContext(s.App.CommitMultiStore(), header, true, sdklog.NewNopLogger())
-	s.QueryHelper = &baseapp.QueryServiceTestHelper{
-		GRPCQueryRouter: s.App.GRPCQueryRouter(),
-		Ctx:             s.Ctx,
+	s.Ctx = s.App.BaseApp.NewUncachedContext(false, header)
+	s.CheckCtx = s.App.BaseApp.NewUncachedContext(true, header)
+
+	s.App.ConsensusParamsKeeper.ParamsStore.Set(s.Ctx, *simtestutil.DefaultConsensusParams)
+
+	s.App.MintKeeper.Params.Set(s.Ctx, minttypes.DefaultParams())
+
+	// Set gas price to 0 in tax params
+	taxParams := taxtypes.DefaultParams()
+	taxParams.GasPrices = sdk.NewDecCoins(sdk.NewDecCoin(core.MicroSDRDenom, sdkmath.ZeroInt()))
+	if err := s.App.TaxKeeper.SetParams(s.Ctx, taxParams); err != nil {
+		panic(err)
 	}
+	s.App.MintKeeper.Minter.Set(s.Ctx, minttypes.DefaultInitialMinter())
+	// Distribution params must be explicitly set in tests, or else queries fail
+	// due to collections-based param store requiring explicit initialization
+	// (unlike x/mint, which has a default value in keeper.go)
+
+	s.App.AccountKeeper.Params.Set(s.Ctx, authtypes.DefaultParams())
+
+	s.App.DistrKeeper.Params.Set(s.Ctx, distrtypes.DefaultParams())
+	s.App.DistrKeeper.FeePool.Set(s.Ctx, distrtypes.InitialFeePool())
+
+	// Explicitly set WASM params to ensure they're available in collections
+	// This is needed because the collections-based param store requires explicit initialization
+	s.App.WasmKeeper.SetParams(s.Ctx, wasmtypes.DefaultParams())
+
+	// Explicitly set bank params to ensure sends are enabled
+	// This ensures uluna transfers work properly in tests
+	bankParams := banktypes.DefaultParams()
+	bankParams.DefaultSendEnabled = true
+	s.App.BankKeeper.SetParams(s.Ctx, bankParams)
+	s.App.BankKeeper.SetSendEnabled(s.Ctx, "uluna", true)
+
+	// Explicitly set Terra module params to ensure they're available in paramSpace
+	// This is needed because modules using paramSpace.Get() require explicit initialization
+	stakingparams := stakingtypes.DefaultParams()
+	stakingparams.BondDenom = appparams.BondDenom
+	s.App.StakingKeeper.SetParams(s.Ctx, stakingparams)
+	s.App.MarketKeeper.SetParams(s.Ctx, markettypes.DefaultParams())
+	s.App.OracleKeeper.SetParams(s.Ctx, oracletypes.DefaultParams())
+	s.App.TreasuryKeeper.SetParams(s.Ctx, treasurytypes.DefaultParams())
+	s.App.DyncommKeeper.SetParams(s.Ctx, dyncommtypes.DefaultParams())
+
+	s.QueryHelper = baseapp.NewQueryServerTestHelper(s.Ctx, s.App.InterfaceRegistry())
 
 	s.TestAccs = s.RandomAccountAddresses(3)
 }
@@ -80,6 +121,10 @@ func (s *KeeperTestHelper) Setup(_ *testing.T, chainID string) {
 func (ao EmptyBaseAppOptions) Get(_ string) interface{} {
 	return nil
 }
+
+type EmptyAppOptions struct{}
+
+func (EmptyAppOptions) Get(_ string) interface{} { return nil }
 
 // DefaultConsensusParams defines the default Tendermint consensus params used
 // in app testing.
@@ -99,10 +144,6 @@ var DefaultConsensusParams = &tmproto.ConsensusParams{
 		},
 	},
 }
-
-type EmptyAppOptions struct{}
-
-func (EmptyAppOptions) Get(_ string) interface{} { return nil }
 
 func SetupApp(t *testing.T, chainID string) *app.TerraApp {
 	t.Helper()
@@ -136,7 +177,10 @@ func SetupApp(t *testing.T, chainID string) *app.TerraApp {
 // that also act as delegators. For simplicity, each validator is bonded with a delegation
 // of one consensus engine unit in the default token of the app from first genesis
 // account. A Nop logger is set in app.
-func SetupWithGenesisValSet(t *testing.T, chainID string, valSet *tmtypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *app.TerraApp {
+func SetupWithGenesisValSet(
+	t *testing.T, chainID string, valSet *tmtypes.ValidatorSet,
+	genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance,
+) *app.TerraApp {
 	t.Helper()
 
 	terraApp, genesisState := setup(chainID)
@@ -145,37 +189,29 @@ func SetupWithGenesisValSet(t *testing.T, chainID string, valSet *tmtypes.Valida
 	stateBytes, err := json.MarshalIndent(genesisState, "", "")
 	require.NoError(t, err)
 
-	// init chain will set the validator set and initialize the genesis accounts
-	terraApp.InitChain(
-		&abci.RequestInitChain{
-			ChainId:         chainID,
-			Validators:      []abci.ValidatorUpdate{},
-			ConsensusParams: DefaultConsensusParams,
-			AppStateBytes:   stateBytes,
-		},
-	)
-
-	ctx := terraApp.BaseApp.NewContext(false).WithBlockHeader(tmproto.Header{
-		Height:             terraApp.LastBlockHeight() + 1,
-		AppHash:            terraApp.LastCommitID().Hash,
-		ValidatorsHash:     valSet.Hash(),
-		NextValidatorsHash: valSet.Hash(),
+	// InitChain writes all module genesis
+	terraApp.InitChain(&abci.RequestInitChain{
+		ChainId:         chainID,
+		Validators:      []abci.ValidatorUpdate{},
+		ConsensusParams: DefaultConsensusParams,
+		AppStateBytes:   stateBytes,
 	})
 
-	// commit genesis changes
-	terraApp.Commit()
-	terraApp.EndBlocker(ctx)
+	// Commit genesis
+	_, terr := terraApp.Commit()
+	require.NoError(t, terr)
 
+	// Do not produce a block here; upstream integration tests keep app at post-genesis state
+	// and let tests drive block progression if needed.
 	return terraApp
 }
 
 func setup(chainID string) (*app.TerraApp, app.GenesisState) {
-
 	db := dbm.NewMemDB()
 	encCdc := app.MakeEncodingConfig()
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[server.FlagInvCheckPeriod] = 5
-	appOptions[server.FlagMinGasPrices] = "0luna"
+	appOptions[server.FlagMinGasPrices] = "0" + appparams.BondDenom
 
 	// unique temp dir for each test
 	baseDir, err := os.MkdirTemp("", "terrapp")
@@ -184,7 +220,7 @@ func setup(chainID string) (*app.TerraApp, app.GenesisState) {
 	}
 
 	terraapp := app.NewTerraApp(
-		log.NewNopLogger(),
+		sdklog.NewNopLogger(), // for debugging we can use sdklog.NewLogger(os.Stdout, sdklog.LevelOption(zerolog.DebugLevel)),
 		db,
 		nil,
 		true,
@@ -267,21 +303,28 @@ func genesisStateWithValSet(t *testing.T,
 	})
 
 	// update total supply
+	// enable send by default to avoid manual post-genesis mutations in tests
+	bankParams := banktypes.DefaultParams()
+	bankParams.DefaultSendEnabled = true
 	bankGenesis := banktypes.NewGenesisState(
-		banktypes.DefaultGenesisState().Params,
+		bankParams,
 		balances,
 		totalSupply,
 		[]banktypes.Metadata{},
-		[]banktypes.SendEnabled{},
+		[]banktypes.SendEnabled{
+			{Denom: appparams.BondDenom, Enabled: true}, // Enable uluna transfers
+		},
 	)
 
 	genesisState[banktypes.ModuleName] = app.AppCodec().MustMarshalJSON(bankGenesis)
 
-	// update mint genesis state
+	// update mint genesis state: ensure correct denom and minter initialized
 	mintGenesis := minttypes.DefaultGenesisState()
+	mintGenesis.Params.MintDenom = appparams.BondDenom
+	mintGenesis.Minter = minttypes.DefaultInitialMinter()
 	genesisState[minttypes.ModuleName] = app.AppCodec().MustMarshalJSON(mintGenesis)
 
-	// update distribution genesis state
+	// distribution default params/state
 	distGenesis := distrtypes.DefaultGenesisState()
 	genesisState[distrtypes.ModuleName] = app.AppCodec().MustMarshalJSON(distGenesis)
 
@@ -301,15 +344,13 @@ func genesisStateWithValSet(t *testing.T,
 	treasuryGensis := treasurytypes.DefaultGenesisState()
 	genesisState[treasurytypes.ModuleName] = app.AppCodec().MustMarshalJSON(treasuryGensis)
 
-	// update tax genesis state
+	// tax genesis state; keep gas price zero to match many legacy tests
 	taxGenesis := taxtypes.DefaultGenesisState()
-	taxGenesis.Params.GasPrices = sdk.NewDecCoins(sdk.NewDecCoin(core.MicroSDRDenom, sdkmath.ZeroInt())) // tests normally rely on zero gas price, so we are setting it here and fall back to the normal ctx.MinGasPrices
+	taxGenesis.Params.GasPrices = sdk.NewDecCoins(sdk.NewDecCoin(core.MicroSDRDenom, sdkmath.ZeroInt()))
 	genesisState[taxtypes.ModuleName] = app.AppCodec().MustMarshalJSON(taxGenesis)
 
-	// update wasm genesis state
-	wasmGenesis := &wasmtypes.GenesisState{
-		Params: wasmtypes.DefaultParams(),
-	}
+	// ensure wasm genesis state present with default params
+	wasmGenesis := &wasmtypes.GenesisState{Params: wasmtypes.DefaultParams()}
 	genesisState[wasmtypes.ModuleName] = app.AppCodec().MustMarshalJSON(wasmGenesis)
 
 	return genesisState
@@ -335,4 +376,20 @@ func (s *KeeperTestHelper) RandomAccountAddresses(n int) []sdk.AccAddress {
 func (s *KeeperTestHelper) FundAcc(acc sdk.AccAddress, amounts sdk.Coins) {
 	err := banktestutil.FundAccount(s.Ctx, s.App.BankKeeper, acc, amounts)
 	s.Require().NoError(err)
+}
+
+// NextBlock finalizes and commits the next block, updating contexts accordingly.
+func (s *KeeperTestHelper) NextBlock() {
+	height := s.App.LastBlockHeight() + 1
+	// Use current header to preserve chain-id and hashes
+	hdr := tmproto.Header{Height: height, ChainID: s.Ctx.ChainID(), Time: time.Now().UTC()}
+	_, err := s.App.FinalizeBlock(&abci.RequestFinalizeBlock{
+		Height: height,
+		Time:   hdr.Time,
+	})
+	s.Require().NoError(err)
+	_, err = s.App.Commit()
+	s.Require().NoError(err)
+	s.Ctx = s.App.BaseApp.NewUncachedContext(false, hdr)
+	s.CheckCtx = s.App.BaseApp.NewUncachedContext(true, hdr)
 }

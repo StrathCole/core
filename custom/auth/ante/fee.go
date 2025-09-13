@@ -14,6 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
@@ -103,6 +104,23 @@ func (fd FeeDecorator) checkDeductFee(ctx sdk.Context, feeTx sdk.FeeTx, taxes sd
 	fee := feeTx.GetFee()
 	feePayer := feeTx.FeePayer()
 	feeGranter := feeTx.FeeGranter()
+	
+	// SDK 0.50 fix: if no fee payer is set, default to first signer
+	if len(feePayer) == 0 {
+		if sigTx, ok := feeTx.(authsigning.SigVerifiableTx); ok {
+			signers, err := sigTx.GetSigners()
+			if err != nil {
+				return ctx, fmt.Errorf("fee payer address not found and cannot get signers: %v", err)
+			}
+			if len(signers) == 0 {
+				return ctx, fmt.Errorf("fee payer address not found and no signers available")
+			}
+			feePayer = signers[0]
+		} else {
+			return ctx, fmt.Errorf("fee payer address not found and cannot cast to SigVerifiableTx")
+		}
+	}
+	
 	deductFeesFrom := feePayer
 
 	// if feegranter set deduct fee from feegranter account.
@@ -171,7 +189,7 @@ func (fd FeeDecorator) checkDeductFee(ctx sdk.Context, feeTx sdk.FeeTx, taxes sd
 		sdk.NewEvent(
 			sdk.EventTypeTx,
 			sdk.NewAttribute(sdk.AttributeKeyFee, fee.String()),
-			sdk.NewAttribute(sdk.AttributeKeyFeePayer, string(deductFeesFrom)),
+			sdk.NewAttribute(sdk.AttributeKeyFeePayer, sdk.AccAddress(deductFeesFrom).String()),
 		),
 	}
 
@@ -195,7 +213,7 @@ func (fd FeeDecorator) checkDeductFee(ctx sdk.Context, feeTx sdk.FeeTx, taxes sd
 			}
 		}
 
-		ctx = ctx.WithValue(taxtypes.ContextKeyTaxDue, taxes).WithValue(taxtypes.ContextKeyTaxPayer, string(deductFeesFrom))
+		ctx = ctx.WithValue(taxtypes.ContextKeyTaxDue, taxes).WithValue(taxtypes.ContextKeyTaxPayer, sdk.AccAddress(deductFeesFrom).String())
 
 		if !deductFees.IsZero() {
 			if err := DeductFees(fd.bankKeeper, ctx, deductFeesFromAcc, deductFees); err != nil {

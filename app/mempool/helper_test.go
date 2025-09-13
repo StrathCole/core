@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	log "cosmossdk.io/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -105,7 +105,7 @@ func (sigErrTx) GetMsgsV2() ([]proto.Message, error) { return nil, nil }
 
 func (sigErrTx) ValidateBasic() error { return nil }
 
-func (sigErrTx) GetSigners() []sdk.AccAddress { return nil }
+func (sigErrTx) GetSigners() ([][]byte, error) { return nil, nil }
 
 func (sigErrTx) GetPubKeys() ([]cryptotypes.PubKey, error) { return nil, nil }
 
@@ -167,6 +167,7 @@ func (s *MempoolTestSuite) TestDefaultMempool() {
 		err := s.mempool.Insert(ctx, tx)
 		require.NoError(t, err)
 	}
+
 	require.Equal(t, len(accounts), s.mempool.CountTx())
 
 	// distinct sender-nonce should not overwrite a tx
@@ -219,7 +220,7 @@ type MempoolTestSuite struct {
 
 func (s *MempoolTestSuite) resetMempool() {
 	s.iterations = 0
-	s.mempool = mempool.NewSenderNonceMempool()
+	s.mempool = mempool.NewSenderNonceMempool(mempool.SenderNonceMaxTxOpt(1000))
 }
 
 func (s *MempoolTestSuite) SetupTest() {

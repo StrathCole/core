@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -111,26 +112,26 @@ func (n *NodeConfig) QuerySupplyOf(denom string) (math.Int, error) {
 	return supplyResp.Amount.Amount, nil
 }
 
-func (n *NodeConfig) QueryTaxRate() (sdk.Dec, error) {
+func (n *NodeConfig) QueryTaxRate() (sdkmath.LegacyDec, error) {
 	path := "terra/treasury/v1beta1/tax_rate"
 	bz, err := n.QueryGRPCGateway(path)
 	require.NoError(n.t, err)
 
 	var taxRateResp treasurytypes.QueryTaxRateResponse
 	if err := util.Cdc.UnmarshalJSON(bz, &taxRateResp); err != nil {
-		return sdk.ZeroDec(), err
+		return sdkmath.LegacyZeroDec(), err
 	}
 	return taxRateResp.TaxRate, nil
 }
 
-func (n *NodeConfig) QueryBurnTaxRate() (sdk.Dec, error) {
+func (n *NodeConfig) QueryBurnTaxRate() (sdkmath.LegacyDec, error) {
 	path := "terra/tax/v1beta1/burn_tax_rate"
 	bz, err := n.QueryGRPCGateway(path)
 	require.NoError(n.t, err)
 
 	var taxRateResp taxtypes.QueryBurnTaxRateResponse
 	if err := util.Cdc.UnmarshalJSON(bz, &taxRateResp); err != nil {
-		return sdk.ZeroDec(), err
+		return sdkmath.LegacyZeroDec(), err
 	}
 	return taxRateResp.TaxRate, nil
 }

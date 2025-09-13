@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cometbft/cometbft/libs/bytes"
@@ -37,7 +38,7 @@ func (n *NodeConfig) InstantiateWasmContract(codeID, initMsg, amount, from strin
 	if amount != "" {
 		cmd = append(cmd, fmt.Sprintf("--amount=%s", amount))
 	}
-	n.LogActionF(strings.Join(cmd, " "))
+	n.LogActionF("%s", strings.Join(cmd, " "))
 	_, _, err := n.containerManager.ExecTxCmd(n.t, n.chainID, n.Name, cmd)
 
 	require.NoError(n.t, err)
@@ -59,7 +60,7 @@ func (n *NodeConfig) Instantiate2WasmContract(codeID, initMsg, salt, amount, fee
 	if gas != "" {
 		cmd = append(cmd, fmt.Sprintf("--gas=%s", gas))
 	}
-	n.LogActionF(strings.Join(cmd, " "))
+	n.LogActionF("%s", strings.Join(cmd, " "))
 	_, _, err := n.containerManager.ExecTxCmd(n.t, n.chainID, n.Name, cmd)
 	require.NoError(n.t, err)
 	n.LogActionF("successfully initialized")
@@ -74,7 +75,7 @@ func (n *NodeConfig) WasmExecute(contract, execMsg, amount, fee, from string) {
 	if fee != "" {
 		cmd = append(cmd, fmt.Sprintf("--fees=%s", fee))
 	}
-	n.LogActionF(strings.Join(cmd, " "))
+	n.LogActionF("%s", strings.Join(cmd, " "))
 	_, _, err := n.containerManager.ExecTxCmd(n.t, n.chainID, n.Name, cmd)
 	require.NoError(n.t, err)
 	n.LogActionF("successfully executed")

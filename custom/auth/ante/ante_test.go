@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
 	dbm "github.com/cosmos/cosmos-db"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -56,6 +56,7 @@ func createTestApp(isCheckTx bool, tempDir string) (*terraapp.TerraApp, sdk.Cont
 	taxParams := taxtypes.DefaultParams()
 	taxParams.GasPrices = sdk.NewDecCoins() // tests normally rely on zero gas price, so we are setting it here and fall back to the normal ctx.MinGasPrices
 	app.TaxKeeper.SetParams(ctx, taxParams)
+	
 	return app, ctx
 }
 

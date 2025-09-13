@@ -419,11 +419,12 @@ func NewAppKeepers(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
-	wasmDir := filepath.Join(homePath, "wasm")
-	wasmConfig, err := wasm.ReadWasmConfig(appOpts)
+	wasmDir := filepath.Join(homePath, "data")
+	wasmNodeConfig, err := wasm.ReadNodeConfig(appOpts)
 	if err != nil {
 		panic(err)
 	}
+	wasmVMConfig := wasmtypes.VMConfig{}
 
 	wasmMsgHandler := customwasmkeeper.NewMessageHandler(
 		bApp.MsgServiceRouter(),
@@ -463,19 +464,20 @@ func NewAppKeepers(
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		appKeepers.StakingKeeper,
-		distrkeeper.NewQuerier(appKeepers.DistrKeeper), // DistributionKeeper
-		appKeepers.IBCFeeKeeper,                        // ICS4Wrapper (fee middleware)
-		appKeepers.IBCKeeper.ChannelKeeper,             // ChannelKeeper
-		appKeepers.IBCKeeper.PortKeeper,                // PortKeeper
-		scopedWasmKeeper,                               // CapabilityKeeper
-		appKeepers.TransferKeeper,                      // ICS20TransferPortSource
-		bApp.MsgServiceRouter(),
-		bApp.GRPCQueryRouter(),
-		wasmDir,
-		wasmConfig,
-		wasmkeeper.BuiltInCapabilities(),
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		wasmOpts...,
+		distrkeeper.NewQuerier(appKeepers.DistrKeeper),    // DistributionKeeper
+		appKeepers.IBCFeeKeeper,                           // ICS4Wrapper (fee middleware)
+		appKeepers.IBCKeeper.ChannelKeeper,                // ChannelKeeperV2 (use same as ChannelKeeper for now)
+		appKeepers.IBCKeeper.PortKeeper,                   // PortKeeper
+		scopedWasmKeeper,                                  // CapabilityKeeper
+		appKeepers.TransferKeeper,                         // ICS20TransferPortSource
+		bApp.MsgServiceRouter(),                           // MessageRouter
+		bApp.GRPCQueryRouter(),                            // GRPCQueryRouter
+		wasmDir,                                           // homeDir
+		wasmNodeConfig,                                    // NodeConfig
+		wasmVMConfig,                                      // VMConfig
+		append(wasmkeeper.BuiltInCapabilities(), "terra"), // availableCapabilities
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(), // authority
+		wasmOpts..., // Options
 	)
 
 	// AFTER wasm set contractKeeper for ics20 wasm hook

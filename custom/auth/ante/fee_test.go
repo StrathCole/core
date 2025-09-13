@@ -231,6 +231,11 @@ func (s *AnteTestSuite) TestEnsureMempoolFeesSwapSend() {
 	// keys and addresses
 	priv1, _, addr1 := testdata.KeyTestPubAddr()
 	coins := sdk.NewCoins(sdk.NewCoin(core.MicroSDRDenom, sdkmath.NewInt(1000000)))
+
+	// SDK 0.50: Explicitly create account before funding
+	acc := s.app.AccountKeeper.NewAccountWithAddress(s.ctx, addr1)
+	s.app.AccountKeeper.SetAccount(s.ctx, acc)
+
 	testutil.FundAccount(s.ctx, s.app.BankKeeper, addr1, coins)
 
 	// msg and signatures
@@ -1517,7 +1522,8 @@ func (s *AnteTestSuite) runBurnSplitTaxTest(burnSplitRate sdkmath.LegacyDec, ora
 	feeCollectorAfter := bk.GetAllBalances(s.ctx, ak.GetModuleAddress(authtypes.FeeCollectorName))
 	oracleAfter := bk.GetAllBalances(s.ctx, ak.GetModuleAddress(oracletypes.ModuleName))
 	taxes, _ := ante.FilterMsgAndComputeTax(s.ctx, te, tk, th, false, msg)
-	communityPoolAfter, _ := dk.GetFeePoolCommunityCoins(s.ctx).TruncateDecimal()
+	feePool, _ := dk.FeePool.Get(s.ctx)
+	communityPoolAfter, _ := feePool.CommunityPool.TruncateDecimal()
 	if communityPoolAfter.IsZero() {
 		communityPoolAfter = sdk.NewCoins(sdk.NewCoin(core.MicroSDRDenom, sdkmath.ZeroInt()))
 	}

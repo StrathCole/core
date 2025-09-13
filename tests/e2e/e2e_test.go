@@ -236,7 +236,7 @@ func (s *IntegrationTestSuite) TestFeeTaxWasm() {
 	// no longer taxed
 	s.Require().Equal(balance1.Amount, transferAmount.Mul(sdkmath.NewInt(3)))
 
-	stabilityFee := sdk.NewDecWithPrec(2, 2).MulInt(transferAmount)
+	stabilityFee := sdkmath.LegacyNewDecWithPrec(2, 2).MulInt(transferAmount)
 
 	node.Instantiate2WasmContract(
 		strconv.Itoa(chain.LatestCodeID),

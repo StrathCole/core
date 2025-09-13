@@ -34,10 +34,6 @@ func NewDyncommDecorator(cdc codec.BinaryCodec, dk dyncommkeeper.Keeper, sk *sta
 }
 
 func (dd DyncommDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	if simulate {
-		return next(ctx, tx, simulate)
-	}
-
 	msgs := tx.GetMsgs()
 	err := dd.FilterMsgsAndProcessMsgs(ctx, msgs...)
 	if err != nil {
@@ -67,7 +63,7 @@ func (dd DyncommDecorator) FilterMsgsAndProcessMsgs(ctx sdk.Context, msgs ...sdk
 			if data.Type != icatypes.EXECUTE_TX {
 				continue
 			}
-			messages, msgerr := icatypes.DeserializeCosmosTx(dd.cdc.(codec.Codec), data.Data, "")
+			messages, msgerr := icatypes.DeserializeCosmosTx(dd.cdc.(codec.Codec), data.Data, "proto3")
 			if msgerr == nil {
 				err = dd.FilterMsgsAndProcessMsgs(ctx, messages...)
 			}
