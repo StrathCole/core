@@ -45,8 +45,8 @@ import (
 	"github.com/classic-terra/core/v3/app/keepers"
 	terraappparams "github.com/classic-terra/core/v3/app/params"
 	customserver "github.com/classic-terra/core/v3/server"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 
 	// upgrades
 	"github.com/classic-terra/core/v3/app/upgrades"
@@ -245,6 +245,7 @@ func NewTerraApp(
 	// PreBlockers run before BeginBlockers. In v0.50, x/upgrade must run in PreBlock.
 	app.mm.SetOrderPreBlockers(
 		upgradetypes.ModuleName,
+		authtypes.ModuleName,
 	)
 	app.mm.SetOrderBeginBlockers(orderBeginBlockers()...)
 	app.mm.SetOrderEndBlockers(orderEndBlockers()...)

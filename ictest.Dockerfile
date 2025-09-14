@@ -52,7 +52,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # Cosmwasm - Download correct libwasmvm version and verify checksum
 RUN set -eux &&\
-    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v2 | cut -d ' ' -f 2) && \
+    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | cut -d ' ' -f 2) && \
     WASMVM_DOWNLOADS="https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}"; \
     wget ${WASMVM_DOWNLOADS}/checksums.txt -O /tmp/checksums.txt; \
     if [ ${BUILDPLATFORM} = "linux/amd64" ]; then \
@@ -69,8 +69,8 @@ RUN set -eux &&\
     CHECKSUM=`sha256sum /tmp/${LIB_NAME} | cut -d" " -f1`; \
     grep ${CHECKSUM} /tmp/checksums.txt; \
     rm /tmp/checksums.txt; \
-    mkdir -p /go/pkg/mod/github.com/!cosm!wasm/wasmvm/v2@${WASMVM_VERSION}/internal/api/; \
-    cp /tmp/${LIB_NAME} /go/pkg/mod/github.com/!cosm!wasm/wasmvm/v2@${WASMVM_VERSION}/internal/api/; \
+    mkdir -p /go/pkg/mod/github.com/!cosm!wasm/wasmvm/v3@${WASMVM_VERSION}/internal/api/; \
+    cp /tmp/${LIB_NAME} /go/pkg/mod/github.com/!cosm!wasm/wasmvm/v3@${WASMVM_VERSION}/internal/api/; \
     rm /tmp/${LIB_NAME}
 
 ###############################################################################

@@ -4,7 +4,7 @@ import (
 	treasurykeeper "github.com/classic-terra/core/v3/x/treasury/keeper"
 
 	errorsmod "cosmossdk.io/errors"
-	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
 	taxexemptionkeeper "github.com/classic-terra/core/v3/x/taxexemption/keeper"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -45,7 +45,6 @@ func NewMessageHandler(
 	router MessageRouter,
 	ics4Wrapper wasmtypes.ICS4Wrapper,
 	channelKeeper wasmtypes.ChannelKeeper,
-	capabilityKeeper wasmtypes.CapabilityKeeper,
 	bankKeeper bankKeeper.Keeper,
 	taxexemptionKeeper taxexemptionkeeper.Keeper,
 	treasuryKeeper treasurykeeper.Keeper,

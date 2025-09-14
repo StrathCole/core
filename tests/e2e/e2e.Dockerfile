@@ -52,7 +52,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # Cosmwasm - Download correct libwasmvm version and verify checksum
 RUN set -eux &&\
-    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v2 | cut -d ' ' -f 2) && \
+    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | cut -d ' ' -f 2) && \
     WASMVM_DOWNLOADS="https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}"; \
     wget ${WASMVM_DOWNLOADS}/checksums.txt -O /tmp/checksums.txt; \
     if [ ${BUILDPLATFORM} = "linux/amd64" ]; then \
@@ -72,14 +72,14 @@ RUN set -eux &&\
 
 # Place libwasmvm_muslc.a in correct directory structure for wasmvm v2
 RUN set -eux &&\
-    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v2 | cut -d ' ' -f 2) && \
+    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | cut -d ' ' -f 2) && \
     if [ ${BUILDPLATFORM} = "linux/amd64" ]; then \
         LIB_NAME="libwasmvm_muslc.x86_64.a"; \
     elif [ ${BUILDPLATFORM} = "linux/arm64" ]; then \
         LIB_NAME="libwasmvm_muslc.aarch64.a"; \
     fi; \
-    mkdir -p /go/pkg/mod/github.com/!cosm!wasm/wasmvm/v2@${WASMVM_VERSION}/internal/api/; \
-    cp /tmp/${LIB_NAME} /go/pkg/mod/github.com/!cosm!wasm/wasmvm/v2@${WASMVM_VERSION}/internal/api/
+    mkdir -p /go/pkg/mod/github.com/!cosm!wasm/wasmvm/v3@${WASMVM_VERSION}/internal/api/; \
+    cp /tmp/${LIB_NAME} /go/pkg/mod/github.com/!cosm!wasm/wasmvm/v3@${WASMVM_VERSION}/internal/api/
 
 ###############################################################################
 

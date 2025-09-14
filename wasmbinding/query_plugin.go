@@ -12,7 +12,7 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 
-	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
 
 	"github.com/classic-terra/core/v3/wasmbinding/bindings"
 	marketkeeper "github.com/classic-terra/core/v3/x/market/keeper"

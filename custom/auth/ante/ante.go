@@ -15,8 +15,8 @@ import (
 	taxexemptionkeeper "github.com/classic-terra/core/v3/x/taxexemption/keeper"
 	"github.com/cosmos/cosmos-sdk/codec"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	ibcante "github.com/cosmos/ibc-go/v8/modules/core/ante"
-	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	ibcante "github.com/cosmos/ibc-go/v10/modules/core/ante"
+	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 
 	taxkeeper "github.com/classic-terra/core/v3/x/tax/keeper"
 

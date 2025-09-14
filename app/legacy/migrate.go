@@ -12,9 +12,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	ibcxfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-	ibccoretypes "github.com/cosmos/ibc-go/v8/modules/core/types"
+	ibcxfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+	ibccoretypes "github.com/cosmos/ibc-go/v10/modules/core/types"
 
 	evtypes "cosmossdk.io/x/evidence/types"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -23,7 +23,6 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
-	captypes "github.com/cosmos/ibc-go/modules/capability/types"
 
 	oracletypes "github.com/classic-terra/core/v3/x/oracle/types"
 )
@@ -126,7 +125,6 @@ $ terrad migrate /path/to/genesis.json --chain-id=cosmoshub-4 --genesis-time=201
 
 			ibcTransferGenesis := ibcxfertypes.DefaultGenesisState()
 			ibcCoreGenesis := ibccoretypes.DefaultGenesisState()
-			capGenesis := captypes.DefaultGenesis()
 			evGenesis := evtypes.DefaultGenesisState()
 
 			ibcTransferGenesis.Params.ReceiveEnabled = false
@@ -137,7 +135,6 @@ $ terrad migrate /path/to/genesis.json --chain-id=cosmoshub-4 --genesis-time=201
 
 			newGenState[ibcxfertypes.ModuleName] = clientCtx.Codec.MustMarshalJSON(ibcTransferGenesis)
 			newGenState[ibcexported.ModuleName] = clientCtx.Codec.MustMarshalJSON(ibcCoreGenesis)
-			newGenState[captypes.ModuleName] = clientCtx.Codec.MustMarshalJSON(capGenesis)
 			newGenState[evtypes.ModuleName] = clientCtx.Codec.MustMarshalJSON(evGenesis)
 			newGenState[staking.ModuleName] = clientCtx.Codec.MustMarshalJSON(&stakingGenesis)
 
