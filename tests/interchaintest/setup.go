@@ -10,8 +10,8 @@ import (
 	oracle "github.com/classic-terra/core/v3/x/oracle/types"
 	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
-	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+	"github.com/cosmos/interchaintest/v10/chain/cosmos"
+	"github.com/cosmos/interchaintest/v10/ibc"
 )
 
 var (
