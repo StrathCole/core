@@ -7,8 +7,8 @@ toolchain go1.24.7
 require (
 	cosmossdk.io/math v1.5.3
 	github.com/classic-terra/core/v3 v3.0.0-00010101000000-000000000000
-	github.com/cosmos/cosmos-sdk v0.50.14
-	github.com/cosmos/ibc-go/v10 v8.7.0
+	github.com/cosmos/cosmos-sdk v0.53.4
+	github.com/cosmos/ibc-go/v10 v10.3.0
 	github.com/icza/dyno v0.0.0-20220812133438-f0b6f8a18845
 	github.com/strangelove-ventures/interchaintest/v8 v8.8.1
 	github.com/stretchr/testify v1.11.1
@@ -35,7 +35,7 @@ require (
 	cosmossdk.io/x/evidence v0.1.1 // indirect
 	cosmossdk.io/x/feegrant v0.1.1 // indirect
 	cosmossdk.io/x/tx v0.14.0 // indirect
-	cosmossdk.io/x/upgrade v0.1.4 // indirect
+	cosmossdk.io/x/upgrade v0.2.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.2 // indirect
@@ -60,7 +60,6 @@ require (
 	github.com/bgentry/speakeasy v0.2.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.0 // indirect
 	github.com/btcsuite/btcd v0.22.1 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
@@ -76,8 +75,8 @@ require (
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
 	github.com/cometbft/cometbft v0.38.18 // indirect
 	github.com/cometbft/cometbft-db v0.14.1 // indirect
-	github.com/consensys/bavard v0.1.13 // indirect
-	github.com/consensys/gnark-crypto v0.12.1 // indirect
+	github.com/consensys/bavard v0.1.27 // indirect
+	github.com/consensys/gnark-crypto v0.16.0 // indirect
 	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/cosmos-db v1.1.3 // indirect
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
@@ -85,11 +84,14 @@ require (
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.7.0 // indirect
 	github.com/cosmos/iavl v1.2.6 // indirect
+	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
+	github.com/cosmos/ibc-go/v8 v8.4.0 // indirect
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/interchain-security/v5 v5.1.1 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.16.0 // indirect
 	github.com/cosmos/ledger-go v0.9.3 // indirect
-	github.com/crate-crypto/go-kzg-4844 v1.0.0 // indirect
+	github.com/crate-crypto/go-eth-kzg v1.3.0 // indirect
+	github.com/crate-crypto/go-ipa v0.0.0-20240724233137-53bbb0ceb27a // indirect
 	github.com/creachadair/taskgroup v0.13.0 // indirect
 	github.com/danieljoos/wincred v1.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -111,8 +113,9 @@ require (
 	github.com/emicklei/dot v1.8.0 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
-	github.com/ethereum/c-kzg-4844 v1.0.0 // indirect
-	github.com/ethereum/go-ethereum v1.14.8 // indirect
+	github.com/ethereum/c-kzg-4844/v2 v2.1.0 // indirect
+	github.com/ethereum/go-ethereum v1.15.11 // indirect
+	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
@@ -128,7 +131,6 @@ require (
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.3 // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
@@ -159,7 +161,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/hdevalence/ed25519consensus v0.2.0 // indirect
-	github.com/holiman/uint256 v1.3.1 // indirect
+	github.com/holiman/uint256 v1.3.2 // indirect
 	github.com/huandu/skiplist v1.2.1 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
@@ -198,7 +200,7 @@ require (
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
+	github.com/opencontainers/image-spec v1.1.0-rc5 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
@@ -227,7 +229,7 @@ require (
 	github.com/spf13/viper v1.20.1 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/supranational/blst v0.3.11 // indirect
+	github.com/supranational/blst v0.3.14 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/tendermint/go-amino v0.16.0 // indirect
 	github.com/tendermint/tendermint v0.38.0-dev // indirect
@@ -253,12 +255,13 @@ require (
 	go.opentelemetry.io/otel/sdk v1.37.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.37.0 // indirect
+	go.uber.org/mock v0.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/arch v0.17.0 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
-	golang.org/x/mod v0.26.0 // indirect
+	golang.org/x/mod v0.27.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
@@ -266,7 +269,7 @@ require (
 	golang.org/x/term v0.34.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
-	golang.org/x/tools v0.35.0 // indirect
+	golang.org/x/tools v0.36.0 // indirect
 	google.golang.org/api v0.247.0 // indirect
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
