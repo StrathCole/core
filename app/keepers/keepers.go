@@ -17,6 +17,7 @@ import (
 	connectiontypes "github.com/cosmos/ibc-go/v10/modules/core/03-connection/types"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
+	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 
 	sdklog "cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
@@ -277,6 +278,14 @@ func NewAppKeepers(
 		appKeepers.UpgradeKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
+
+	// Register IBC light clients (v10 requires explicit registration)
+	{
+		clientKeeper := appKeepers.IBCKeeper.ClientKeeper
+		storeProvider := clientKeeper.GetStoreProvider()
+		tmLightClientModule := ibctm.NewLightClientModule(appCodec, storeProvider)
+		clientKeeper.AddRoute(ibctm.ModuleName, tmLightClientModule)
+	}
 
 	appKeepers.ICAHostKeeper = icahostkeeper.NewKeeper(
 		appCodec,
