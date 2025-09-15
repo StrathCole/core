@@ -86,7 +86,7 @@ func TestValidator(t *testing.T) {
 	// wait long enough to trip slashing window
 	require.NoError(t, testutil.WaitForBlocks(ctx, 21, terra))
 
-	// --- Query all validators (avoid pagination pitfalls) ---
+	// --- Query all validators
 	stdout, _, err = terra.Validators[0].ExecQuery(
 		ctx, "staking", "validators",
 		"--output", "json",

@@ -35,20 +35,6 @@ func UnmarshalValidators(config testutil.TestEncodingConfig, data []byte) (staki
 		} else {
 			return validators, nil, fmt.Errorf("invalid validators field")
 		}
-	} else if v, ok := tmp["validator"]; ok {
-		// Some paths may use singular; normalize to slice
-		if m, ok2 := v.(map[string]interface{}); ok2 {
-			tmpValidators = []interface{}{m}
-		}
-	}
-
-	if tmpValidators == nil {
-		// As a last resort, try to interpret the whole payload as an array
-		var arr []interface{}
-		if err := json.Unmarshal(data, &arr); err != nil {
-			return validators, nil, fmt.Errorf("no validators array found")
-		}
-		tmpValidators = arr
 	}
 
 	for _, v := range tmpValidators {
@@ -206,49 +192,12 @@ func parseConsensusPubKeyTolerant(config testutil.TestEncodingConfig, val interf
 		return nil, err
 	}
 
-	// Path 1: try Any via codec
-	{
-		var pk cryptotypes.PubKey
-		if err := config.Codec.UnmarshalInterfaceJSON(bz, &pk); err == nil && pk != nil {
-			return pk, nil
-		}
-	}
-
 	// Decode into generic map to inspect alternatives
 	var m map[string]interface{}
 	_ = json.Unmarshal(bz, &m)
 
-	// Path 2: {"key":"..."}
-	if k, ok := m["key"].(string); ok && k != "" {
-		raw, err := base64.StdEncoding.DecodeString(k)
-		if err != nil {
-			return nil, err
-		}
-		return &sdked25519.PubKey{Key: raw}, nil
-	}
-
-	// Path 3: {"ed25519":"..."}
-	if k, ok := m["ed25519"].(string); ok && k != "" {
-		raw, err := base64.StdEncoding.DecodeString(k)
-		if err != nil {
-			return nil, err
-		}
-		return &sdked25519.PubKey{Key: raw}, nil
-	}
-
-	// Path 4: {"value":"..."}
 	if k, ok := m["value"].(string); ok && k != "" {
 		raw, err := base64.StdEncoding.DecodeString(k)
-		if err != nil {
-			return nil, err
-		}
-		return &sdked25519.PubKey{Key: raw}, nil
-	}
-
-	// Path 5: raw base64 string
-	var s string
-	if err := json.Unmarshal(bz, &s); err == nil && s != "" {
-		raw, err := base64.StdEncoding.DecodeString(s)
 		if err != nil {
 			return nil, err
 		}
