@@ -254,6 +254,9 @@ func queryCommand(basicMgr module.BasicManager) *cobra.Command {
 	)
 
 	basicMgr.AddQueryCommands(cmd)
+	// expose common query flags (node, height, etc.) so that AutoCLI commands
+	// like staking queries receive --height and perform historic queries
+	flags.AddQueryFlagsToCmd(cmd)
 	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
 
 	return cmd
