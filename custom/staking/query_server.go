@@ -170,35 +170,44 @@ func (q *LegacyQueryServer) validatorDelegationsLegacy(
 	startingInfoPrefix = append(startingInfoPrefix, address.MustLengthPrefix(valAddr.Bytes())...)
 	startingInfoStore := prefix.NewStore(distrStore, startingInfoPrefix)
 
-	delegations := make(stakingtypes.Delegations, 0)
-	pageRes, err := query.FilteredPaginate(startingInfoStore, req.Pagination, func(key, _ []byte, accumulate bool) (bool, error) {
+	delegatorAddrs := make([]sdk.AccAddress, 0)
+	pageRes, err := query.Paginate(startingInfoStore, req.Pagination, func(key, _ []byte) error {
 		delAddr, err := parseLengthPrefixedAccAddress(key)
 		if err != nil {
-			return false, err
+			return err
 		}
-
-		delegationBz := stakingStore.Get(stakingtypes.GetDelegationKey(delAddr, valAddr))
-		if delegationBz == nil {
-			return false, nil
-		}
-		if !accumulate {
-			return true, nil
-		}
-
-		var delegation stakingtypes.Delegation
-		if err := q.cdc.Unmarshal(delegationBz, &delegation); err != nil {
-			return false, err
-		}
-		delegations = append(delegations, delegation)
-		return true, nil
+		delegatorAddrs = append(delegatorAddrs, delAddr)
+		return nil
 	})
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	delResps, err := q.delegationsToDelegationResponses(ctx, delegations)
+	bondDenom, err := q.keeper.BondDenom(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+	validator, err := q.keeper.GetValidator(ctx, valAddr)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	delResps := make(stakingtypes.DelegationResponses, 0, len(delegatorAddrs))
+	for _, delAddr := range delegatorAddrs {
+		delegationBz := stakingStore.Get(stakingtypes.GetDelegationKey(delAddr, valAddr))
+		if delegationBz == nil {
+			continue
+		}
+
+		var delegation stakingtypes.Delegation
+		if err := q.cdc.Unmarshal(delegationBz, &delegation); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		balance := validator.TokensFromShares(delegation.Shares).TruncateInt()
+		delResps = append(delResps, stakingtypes.NewDelegationResp(
+			delegation.GetDelegatorAddr(), delegation.GetValidatorAddr(), delegation.Shares, sdk.NewCoin(bondDenom, balance),
+		))
 	}
 
 	return &stakingtypes.QueryValidatorDelegationsResponse{
