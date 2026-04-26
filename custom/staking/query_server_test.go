@@ -15,6 +15,7 @@ import (
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	"github.com/cosmos/cosmos-sdk/x/staking/testutil"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -122,7 +123,7 @@ func (s *ValidatorDelegationsSuite) TestValidatorDelegations_ReproducesArchiveBu
 	ss := s.App.GetSubspace(stakingtypes.ModuleName)
 	qs := customstaking.NewLegacyQueryServer(
 		querier, ss, s.App.StakingKeeper,
-		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey),
+		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey), s.App.GetKey(distrtypes.StoreKey),
 	)
 
 	req := &stakingtypes.QueryValidatorDelegationsRequest{ValidatorAddr: valAddr.String()}
@@ -163,7 +164,7 @@ func (s *ValidatorDelegationsSuite) TestValidatorDelegations_LegacyPathKeepsLega
 	ss := s.App.GetSubspace(stakingtypes.ModuleName)
 	qs := customstaking.NewLegacyQueryServer(
 		querier, ss, s.App.StakingKeeper,
-		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey),
+		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey), s.App.GetKey(distrtypes.StoreKey),
 	)
 
 	params, err := s.App.StakingKeeper.GetParams(s.Ctx)
@@ -202,7 +203,7 @@ func (s *ValidatorDelegationsSuite) TestValidatorDelegations_LegacyPathPaginates
 	ss := s.App.GetSubspace(stakingtypes.ModuleName)
 	qs := customstaking.NewLegacyQueryServer(
 		querier, ss, s.App.StakingKeeper,
-		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey),
+		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey), s.App.GetKey(distrtypes.StoreKey),
 	)
 
 	// Drop the reverse-index and force the legacy path.
@@ -253,7 +254,7 @@ func (s *ValidatorDelegationsSuite) TestValidatorDelegations_PostMigrationUsesIn
 	ss := s.App.GetSubspace(stakingtypes.ModuleName)
 	qs := customstaking.NewLegacyQueryServer(
 		querier, ss, s.App.StakingKeeper,
-		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey),
+		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey), s.App.GetKey(distrtypes.StoreKey),
 	)
 
 	req := &stakingtypes.QueryValidatorDelegationsRequest{ValidatorAddr: valAddr.String()}
@@ -344,7 +345,7 @@ func (s *ValidatorDelegationsSuite) TestHistoricalInfo_ReproducesArchiveBug() {
 	ss := s.App.GetSubspace(stakingtypes.ModuleName)
 	qs := customstaking.NewLegacyQueryServer(
 		querier, ss, s.App.StakingKeeper,
-		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey),
+		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey), s.App.GetKey(distrtypes.StoreKey),
 	)
 
 	req := &stakingtypes.QueryHistoricalInfoRequest{Height: targetHeight}
@@ -394,7 +395,7 @@ func (s *ValidatorDelegationsSuite) TestHistoricalInfo_PostMigrationUsesIndex() 
 	ss := s.App.GetSubspace(stakingtypes.ModuleName)
 	qs := customstaking.NewLegacyQueryServer(
 		querier, ss, s.App.StakingKeeper,
-		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey),
+		s.App.AppCodec(), s.App.GetKey(stakingtypes.StoreKey), s.App.GetKey(distrtypes.StoreKey),
 	)
 
 	// Rewrite into legacy string-format keys; with the height gate at
